@@ -94,8 +94,9 @@ const BuyProject = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get("http://localhost:8083/tp/api/products");
+      const response = await axios.get("https://backendbillcom-production.up.railway.app/tp/api/products");
       const fetchedProducts = response.data;
+      console.log('Fetched Products:', fetchedProducts);  // Check the fetched data
       setProducts(fetchedProducts);
       setFilteredProducts(fetchedProducts);
       setBrands([...new Set(fetchedProducts.map(product => product.marque))]); // Extract brands
@@ -104,6 +105,7 @@ const BuyProject = () => {
       console.error("Error fetching products:", error);
     }
   };
+
 
   const filterProductsByQuery = (query) => {
     const filtered = products.filter((product) =>
@@ -136,30 +138,31 @@ const BuyProject = () => {
 
   const applyFilters = () => {
     let filtered = products;
-
+  
     if (categoryType && categoryType !== "all") {
       filtered = filtered.filter((product) =>
-        product.type.toLowerCase() === categoryType.toLowerCase()
+        product.type && product.type.toLowerCase() === categoryType.toLowerCase()
       );
     }
-
+  
     if (currentSubcategory && currentSubcategory !== "all") {
       filtered = filtered.filter((product) =>
         product.subcategory && product.subcategory.toLowerCase() === currentSubcategory.toLowerCase()
       );
     }
-
+  
     filtered = filtered.filter(
-      (product) =>
-        product.prix >= priceRange[0] && product.prix <= priceRange[1]
+      (product) => product.prix >= priceRange[0] && product.prix <= priceRange[1]
     );
-
+  
     if (selectedBrands.length > 0) {
       filtered = filtered.filter((product) => selectedBrands.includes(product.marque));
     }
-
+  
     sortAndFilterProducts(filtered, sortOption);
   };
+  
+  
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
@@ -254,10 +257,18 @@ const BuyProject = () => {
       <Loading isVisible={loading} /> {/* Add Loading component here */}
       <section className="no-scrollbar flex px-4 pt-20 pb-48 mt-10 p-10">
   <div className="w-1/6 p-4">
+  
     <div className="bg-white shadow-md rounded p-4" style={{ marginTop: "30px" }}>
       <h2 className="text-l font-medium text-gray-600 mb-4">Filter</h2>
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700">Price</label>
+        <button
+              onClick={openForm}
+              className="bg-[#3D92F1] hover:bg-[#3D92F1] text-white font-bold py-2 px-4 rounded transition-colors duration-300"
+              style={{ backgroundColor: dynamicColor }}
+            >
+              Add Your Product
+            </button>
         <input
           type="range"
           min="0"
@@ -277,20 +288,21 @@ const BuyProject = () => {
 
         <h3 className="text-sm font-medium text-gray-700">Brand</h3>
         <div className="flex flex-col">
-          {brands.map((brand, index) => {
-            const formattedBrand = brand.toLowerCase().replace(/\s+/g, '_');
-            const imagePath = `http://localhost:8083/tp/uploads/${formattedBrand}.png`;
-            return (
-              <div
-                key={index}
-                className={`flex items-center cursor-pointer m-2 pr-4 ${selectedBrands.includes(brand) ? 'bg-gray-50 selected-brand' : ''}`}
-                onClick={() => filterProductsByBrand(brand)}
-              >
-                <img src={imagePath} alt={brand} className="h-8 w-8 mr-3 rounded-full" />
-                <p className="text-xs font-small text-gray-600">{brand}</p>
-              </div>
-            );
-          })}
+        {brands.map((brand, index) => {
+  const formattedBrand = brand.toLowerCase().replace(/\s+/g, '_');
+  const imagePath = `https://backendbillcom-production.up.railway.app/uploads/${formattedBrand}.png`;
+  return (
+    <div
+      key={index}
+      className={`flex items-center cursor-pointer m-2 pr-4 ${selectedBrands.includes(brand) ? 'bg-gray-50 selected-brand' : ''}`}
+      onClick={() => filterProductsByBrand(brand)}
+    >
+      <img src={imagePath} alt={brand} className="h-8 w-8 mr-3 rounded-full" />
+      <p className="text-xs font-small text-gray-600">{brand}</p>
+    </div>
+  );
+})}
+
         </div>
       </div>
     </div>
@@ -392,24 +404,26 @@ const BuyProject = () => {
 };
 
 const ServiceCardWrapper = ({ product, isMostRecent, dynamicColor, viewType }) => {
+  const logoPath = product.logoUrl ? `https://backendbillcom-production.up.railway.app/uploads/${product.logoUrl}` : `/path/to/default-logo.png`; // Use default if no logo
+
   return (
     <ServiceCard
       title={product.title}
-      image={`http://localhost:8083/tp/uploads/${product.image}`}
-      imagelogo={`http://localhost:8083/tp/uploads/${product.logoUrl}`}
+      image={`https://backendbillcom-production.up.railway.app/uploads/${product.image}`}  // Product image
+      imagelogo={logoPath}  // Brand logo
       price={String(product.prix)}
       user={product.user}
-      productId={String(product.id)}
+      productId={String(product._id)}
       dispo={product.dispo}
       marque={product.marque}
       dateAdded={product.dateAdded}
-      isMostRecent={isMostRecent}
       promo={product.promo}
       dynamicColor={dynamicColor}
       viewType={viewType}
     />
   );
 };
+
 
 const Pagination = ({ pageNumbers, currentPage, paginate, dynamicColor }) => {
   return (
