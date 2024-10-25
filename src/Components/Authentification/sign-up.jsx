@@ -25,7 +25,7 @@ export function SignUp() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [errors, setErrors] = useState({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [profilePicture, setProfilePicture] = useState(null);
+ 
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const images = [
@@ -94,9 +94,6 @@ export function SignUp() {
     setErrors({ ...errors, [`${fieldName}Error`]: validateField(fieldName, value) });
   };
 
-  const handleFileChange = (e) => {
-    setProfilePicture(e.target.files[0]);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,29 +109,32 @@ export function SignUp() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('profile_picture', profilePicture);
-    formData.append('nom', user.LastName);
-    formData.append('prenom', user.FirstName);
-    formData.append('email', user.Email);
-    formData.append('password', user.Password);
-    formData.append('ville', selectedCountry.label);
-    formData.append('adresse', user.Address);
-    formData.append('codepostal', user.PostalCode);
-    formData.append('telephone', user.Phone);
-    formData.append('genre', user.Genre); // Ajouter le genre
+    // Mise à jour : formData correspond à ce que le backend attend
+    const formData = {
+      nom: user.LastName,
+      prenom: user.FirstName,
+      email: user.Email,
+      password: user.Password,
+      confirmPassword: user.ConfirmPassword,
+      pays: selectedCountry.label,
+      adresse: user.Address,
+      codePostal: user.PostalCode,
+      telephone: user.Phone,
+      genre: user.Genre, // Ajouter le genre
+      dateNaissance: '' // Si nécessaire, ajoute une logique pour récupérer la date de naissance
+    };
 
     try {
-      const response = await axios.post('http://localhost:8083/tp/api/user/addUser', formData, {
+      const response = await axios.post('https://backendbillcom-production.up.railway.app/auth/register', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json', // Le format attendu est JSON et non multipart/form-data
         },
       });
       console.log('User added:', response.data);
       setShowSuccessAlert(true);
       setUser({ FirstName: '', LastName: '', Email: '', Password: '', ConfirmPassword: '', Country: '', Address: '', PostalCode: '', Phone: '', Checkbox: true, Type: 'Utilisateur', Genre: '' });
       setSelectedCountry(''); // Réinitialisation du pays sélectionné après soumission
-      setProfilePicture(null); // Réinitialisation de la photo de profil
+  
       setErrors({});
       
       Swal.fire({
@@ -155,6 +155,8 @@ export function SignUp() {
     }
   };
 
+
+
   return (
     <div className='pt-24'>
       <section className="m-8 flex">
@@ -167,15 +169,7 @@ export function SignUp() {
 
           <form className="mx-auto w-80 max-w-screen-lg lg:w-1/2" onSubmit={handleSubmit}>
             <div className="flex flex-col items-center mb-6">
-              <label htmlFor="profile_picture">
-                <input type="file" id="profile_picture" style={{ display: 'none' }} onChange={handleFileChange} />
-                <Avatar
-                  src={profilePicture ? URL.createObjectURL(profilePicture) : '/public/img/user.png'}
-                  alt="Profile picture"
-                  variant="circular"
-                  className="h-24 w-24 cursor-pointer"
-                />
-              </label>
+             
               <Typography
                 variant="small"
                 color="blue-gray"

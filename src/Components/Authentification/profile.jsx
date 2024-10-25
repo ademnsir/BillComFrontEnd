@@ -10,13 +10,14 @@ export function Profile() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const { idUser } = useParams();
+  const { idUser } = useParams(); // Assuming `idUser` comes from the URL
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8083/tp/api/user/getUserById/${idUser}`);
-        setUserData(response.data);
+        // Remplacer l'URL par celle du backend déployé
+        const response = await axios.get(`https://backendbillcom-production.up.railway.app/auth/getuser?id=${idUser}`);
+        setUserData(response.data.user);  // Assurez-vous que les données correspondent à ce que le backend renvoie
       } catch (error) {
         console.error('Error fetching user data:', error);
         navigate("/error");
@@ -37,14 +38,15 @@ export function Profile() {
     formData.append('profile_picture', selectedFile);
 
     try {
-      const response = await axios.post(`http://localhost:8083/tp/api/user/uploadProfilePicture/${idUser}`, formData, {
+      // Remplacer par la bonne URL pour uploader la photo de profil
+      const response = await axios.post(`https://backendbillcom-production.up.railway.app/auth/uploadProfilePicture/${idUser}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       console.log('File uploaded successfully:', response.data);
 
-      // Mettre à jour l'état local avec la nouvelle photo de profil
+      // Mise à jour de l'état local avec la nouvelle photo de profil
       setUserData(prev => ({ ...prev, profilePicture: response.data.fileName }));
 
       // Afficher une alerte de succès
@@ -86,7 +88,7 @@ export function Profile() {
               <label htmlFor="avatar">
                 <input type="file" id="avatar" style={{ display: 'none' }} onChange={handleFileChange} />
                 <Avatar
-                  src={selectedFile ? URL.createObjectURL(selectedFile) : userData.profilePicture ? `http://localhost:8083/tp/uploads/${userData.profilePicture}` : '/public/img/user1.jpg'}
+                  src={selectedFile ? URL.createObjectURL(selectedFile) : userData.profilePicture ? `https://backendbillcom-production.up.railway.app/uploads/${userData.profilePicture}` : '/public/img/user1.jpg'}
                   alt="Profile picture"
                   variant="circular"
                   className="h-full w-full cursor-pointer"
