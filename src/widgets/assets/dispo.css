@@ -1,0 +1,68 @@
+.text-green {
+  color: green;
+}
+
+.text-red {
+  color: red;
+}
+
+.service-card {
+  transition: transform 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.service-card:hover {
+  transform: scale(1.05);
+}
+
+.service-card:hover .service-image {
+  transform: scale(1.0) translate(10px, 10px);
+}
+
+.image-container {
+  overflow: hidden;
+}
+
+.service-image {
+  transition: transform 0.3s ease-in-out;
+}
+
+.promo-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 50px;
+  height: 50px;
+  background-color: #F63333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.promo-text {
+  text-transform: uppercase;
+}
+
+.promo-discount {
+  font-size: 12px;
+}
+
+.promo-off {
+  font-size: 8px;
+}

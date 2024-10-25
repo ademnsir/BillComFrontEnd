@@ -1,0 +1,73 @@
+/* meeting.css */
+.meeting-container {
+    position: relative;
+    height: 100vh;
+    border-radius: 10px; 
+    overflow: hidden; 
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    border: 2px solid #5DADE2;
+      
+}
+body {
+    overflow: auto; 
+}
+
+
+.webcam-container {
+    position: relative !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    border-radius: 10px !important;
+    border: 2px solid #5DADE2 !important; 
+    overflow: auto;
+}
+
+
+
+
+/* meeting.css */
+.bottom-navbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 75%; 
+    height: 60px;
+    background-color:#3498DB;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+
+
+.webcam-off-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    color: #333;
+}
+
+
+.sidebar {
+    width: 350px; 
+    background-color: #ffffff;
+    height: 100vh;
+    position: fixed; 
+    top: 0; 
+    right: 0; 
+    padding-top: 200px;
+}
+

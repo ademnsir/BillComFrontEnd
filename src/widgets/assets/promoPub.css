@@ -1,0 +1,59 @@
+.fixed-footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #f8f9fa;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  text-align: center;
+}
+.category-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 1rem;
+
+  border-radius: 8px;
+  width: 100%; /* Ensure the category bar takes the full width of the container */
+  max-width: 1400px; /* Increase the maximum width of the category bar */
+  margin-top: 30px; /* Center the category bar within the container */
+}
+/* src/Components/BuyProject/BuyProject.css */
+.filter-card {
+margin-top: 30px;
+}
+
+.tab-item {
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  margin: 0 0.25rem; /* Minimize space between elements */
+  font-size: 0.875rem;
+  color: gray;
+  
+ 
+}
+
+.tab-item.active-tab {
+  border-bottom: 4px solid;
+  border-image: linear-gradient(to right, #F9D6E4, #3D92F1) 1;
+  color: #3D92F1;
+}
+
+.selected-brand {
+  position: relative;
+}
+
+.selected-brand::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px; /* Adjust width as needed */
+  background: linear-gradient(to right, #F9D6E4, #3D92F1);
+}
+

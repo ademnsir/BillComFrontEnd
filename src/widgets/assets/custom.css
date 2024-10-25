@@ -1,0 +1,11 @@
+.fixed-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px 0;
+    text-align: center;
+  }
+  
