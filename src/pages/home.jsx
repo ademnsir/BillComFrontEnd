@@ -1,8 +1,7 @@
-// src/pages/Home.jsx
 import React, { useEffect, useState } from "react";
 import { Typography } from "@material-tailwind/react";
 import { Footer } from "@/index";
-import {ReactTyped} from "react-typed";
+import { ReactTyped } from "react-typed";
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import PromoBanner from "@/widgets/layout/PromoBanner"; // Adjust the path if needed
@@ -27,11 +26,12 @@ export function Home({ isLoggedIn }) {
     // Fetch products and filter for promo products based on selected tab
     const fetchPromoProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:8083/tp/api/products");
+        const response = await axios.get("https://backendbillcom-production.up.railway.app/tp/api/products");
         const products = response.data;
         let filteredProducts = [];
         if (selectedTab === 'featured') {
-          filteredProducts = products.filter(product => product.promo);
+          // Filter products where promo is greater than 0 (indicating a promo product)
+          filteredProducts = products.filter(product => product.promo > 0);
         } else if (selectedTab === 'new') {
           filteredProducts = products.filter(product => product.new);
         } else if (selectedTab === 'bestselling') {
@@ -134,7 +134,7 @@ export function Home({ isLoggedIn }) {
         <br></br>
         {/* PromoBanner Component */}
         {promoProducts.length > 0 ? (
-          <PromoBanner products={promoProducts} />
+          <PromoBanner products={promoProducts} onProductClick={(id) => navigate(`/productDetails/${id}`)} />
         ) : (
           <div>{t('NO_PROMO_PRODUCTS')}</div>
         )}
