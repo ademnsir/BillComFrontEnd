@@ -81,7 +81,7 @@ const BuyProject = () => {
     setTimeout(() => {
       navigate(`/productDetails/${productId}`);
       setLoading(false);
-    }, 500); // Simulate a brief loading delay
+    }, 500); 
   };
 
   const shuffleArray = (array) => {
@@ -96,7 +96,7 @@ const BuyProject = () => {
     try {
       const response = await axios.get("https://backendbillcom-production.up.railway.app/tp/api/products");
       const fetchedProducts = response.data;
-      console.log('Fetched Products:', fetchedProducts);  // Check the fetched data
+      console.log('Fetched Products:', fetchedProducts); 
       setProducts(fetchedProducts);
       setFilteredProducts(fetchedProducts);
       setBrands([...new Set(fetchedProducts.map(product => product.marque))]); // Extract brands
@@ -256,57 +256,55 @@ const BuyProject = () => {
     <>
       <Loading isVisible={loading} /> {/* Add Loading component here */}
       <section className="no-scrollbar flex px-4 pt-20 pb-48 mt-10 p-10">
-  <div className="w-1/6 p-4">
-  
-    <div className="bg-white shadow-md rounded p-4" style={{ marginTop: "30px" }}>
-      <h2 className="text-l font-medium text-gray-600 mb-4">Filter</h2>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Price</label>
-        <button
-              onClick={openForm}
-              className="bg-[#3D92F1] hover:bg-[#3D92F1] text-white font-bold py-2 px-4 rounded transition-colors duration-300"
-              style={{ backgroundColor: dynamicColor }}
-            >
-              Add Your Product
-            </button>
-        <input
-          type="range"
-          min="0"
-          max="4000"
-          value={priceRange[1]}
-          name="max"
-          onChange={handlePriceChange}
-          className="w-full"
-        />
-        <div className="flex justify-between text-xs">
-          <span>{priceRange[0]}DT</span>
-          <span>{priceRange[1]}DT</span>
-        </div>
+      <div className="w-1/6 p-4">
+  <div className="bg-white shadow-md rounded p-4" style={{ marginTop: "30px" }}>
+    <h2 className="text-l font-medium text-gray-600 mb-4">Filter</h2>
+    
+    {/* Slider de prix */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700">Price</label>
+      <input
+        type="range"
+        min="0"
+        max="4000"
+        value={priceRange[1]}
+        name="max"
+        onChange={handlePriceChange}
+        className="w-full"
+      />
+      <div className="flex justify-between text-xs">
+        <span>{priceRange[0]}DT</span>
+        <span>{priceRange[1]}DT</span>
       </div>
-      <div>
-        <hr className="my-2 border-gray-300" />
-
-        <h3 className="text-sm font-medium text-gray-700">Brand</h3>
-        <div className="flex flex-col">
-        {brands.map((brand, index) => {
-  const formattedBrand = brand.toLowerCase().replace(/\s+/g, '_');
-  const imagePath = `https://backendbillcom-production.up.railway.app/uploads/${formattedBrand}.png`;
-  return (
-    <div
-      key={index}
-      className={`flex items-center cursor-pointer m-2 pr-4 ${selectedBrands.includes(brand) ? 'bg-gray-50 selected-brand' : ''}`}
-      onClick={() => filterProductsByBrand(brand)}
-    >
-      <img src={imagePath} alt={brand} className="h-8 w-8 mr-3 rounded-full" />
-      <p className="text-xs font-small text-gray-600">{brand}</p>
     </div>
-  );
-})}
-
-        </div>
+    
+    {/* Marque */}
+    <div>
+      <hr className="my-2 border-gray-300" />
+      <h3 className="text-sm font-medium text-gray-700">Marque</h3>
+      <div className="flex flex-col">
+        {brands.map((brand, index) => {
+          const brandLowerCase = brand.toLowerCase();  // Convertir la marque en minuscule pour correspondre au fichier
+          const logoFileName = `${brandLowerCase}logo.png`; // Nom du logo basé sur la marque en minuscule
+          const imagePath = `https://backendbillcom-production.up.railway.app/uploads/${logoFileName}`; // Chemin vers le fichier logo
+          return (
+            <div
+              key={index}
+              className={`flex items-center cursor-pointer m-2 pr-4 ${selectedBrands.includes(brand) ? 'bg-gray-50 selected-brand' : ''}`}
+              onClick={() => filterProductsByBrand(brand)}
+            >
+              <img src={imagePath} alt={brandLowerCase} className="h-8 w-8 mr-3 rounded-full" />
+              <p className="text-xs font-small text-gray-600">{brand.toUpperCase()}</p> {/* Afficher la marque en majuscule */}
+            </div>
+          );
+        })}
       </div>
     </div>
   </div>
+</div>
+
+
+
   <div className="w-5/6 pr-6">
     <div className="container mx-auto">
       {promoProducts.length > 0}
@@ -374,11 +372,11 @@ const BuyProject = () => {
           </div>
         ) : (
           currentProducts.map((product) => (
-            <div key={product.id} className={`${viewType === "list" ? "flex" : ""}`}>
-              <div onClick={() => handleCardClick(product.id)} className={`${viewType === "list" ? "w-full flex cursor-pointer" : "cursor-pointer"}`}>
+            <div key={product._id} className={`${viewType === "list" ? "flex" : ""}`}>
+              <div onClick={() => handleCardClick(product._id)} className={`${viewType === "list" ? "w-full flex cursor-pointer" : "cursor-pointer"}`}>
                 <ServiceCardWrapper
                   product={product}
-                  isMostRecent={product.id === mostRecentProduct.id}
+                  isMostRecent={product._id === mostRecentProduct._id}
                   dynamicColor={dynamicColor}
                   viewType={viewType}
                 />
@@ -423,7 +421,6 @@ const ServiceCardWrapper = ({ product, isMostRecent, dynamicColor, viewType }) =
     />
   );
 };
-
 
 const Pagination = ({ pageNumbers, currentPage, paginate, dynamicColor }) => {
   return (

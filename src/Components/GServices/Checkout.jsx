@@ -121,7 +121,7 @@ const Checkout = () => {
                 : parseFloat(item.price).toFixed(2),
               quantity: item.quantity,
               description: item.description || "",
-              image: `http://localhost:8083/tp/uploads/${item.image}`
+              image: `https://backendbillcom-production.up.railway.app/uploads/${item.image}`
             })),
             address: formData
           }),
@@ -300,7 +300,7 @@ const Checkout = () => {
               <div className="my-4">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex justify-between items-center mb-4">
-                    <img src={`http://localhost:8083/tp/uploads/${item.image}`} alt={item.title} className="w-20 h-20 rounded" />
+                    <img src={`https://backendbillcom-production.up.railway.app/uploads/${item.image}`} alt={item.title} className="w-20 h-20 rounded" />
                     <Typography className="flex-grow ml-4">{item.title}</Typography>
                     <Typography>{item.quantity} x {parseFloat(item.price).toFixed(3)} DT</Typography>
                     <Typography className="font-bold text-red-500">{(item.quantity * parseFloat(item.price)).toFixed(3)} DT</Typography>

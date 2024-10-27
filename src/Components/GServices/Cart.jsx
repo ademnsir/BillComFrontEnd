@@ -50,7 +50,7 @@ const Payment = () => {
           ) : (
             cartItems.map((item) => (
               <div key={item.id} className="flex items-center justify-between mb-4">
-                <img src={`http://localhost:8083/tp/uploads/${item.image}`} alt={item.title} className="w-20 h-20 rounded" />
+                <img src={`https://backendbillcom-production.up.railway.app/uploads/${item.image}`} alt={item.title} className="w-20 h-20 rounded" />
                 <div className="flex-grow ml-4">
                   <Typography variant="h6" className="font-bold">{item.title}</Typography>
                   {item.promo ? (

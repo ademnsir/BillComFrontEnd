@@ -413,7 +413,7 @@ function Navbar({ routes, setIsLoggedIn }) {
                       {cartItems.slice(0, 5).map((item, index) => (
                         <div key={item.id}>
                           <div className="flex items-center justify-between mt-4">
-                            <img src={`http://localhost:8083/tp/uploads/${item.image}`} alt={item.title} className="w-16 h-16 rounded" />
+                            <img src={`https://backendbillcom-production.up.railway.app/uploads/${item.image}`} alt={item.title} className="w-16 h-16 rounded" />
                             <div className="flex flex-col ml-4">
                               <Typography variant="small" className="text-gray-500">
                                 <span className="font-bold" style={{ color: navbarStyle.color }}>{item.quantity} x {item.price} DT</span> {item.title}
