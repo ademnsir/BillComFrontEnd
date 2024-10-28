@@ -62,9 +62,9 @@ const ServiceDetails = ({ loading }) => {
   const { authData } = useAuth();
 
   const formatDate = (date) => format(new Date(date), 'dd MMM, yyyy');
-  const maskNom = (nom) => {
-    return '*'.repeat(nom.length);
-  };
+  // const maskNom = (nom) => {
+  //   return '*'.repeat(nom.length);
+  // };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -194,15 +194,30 @@ const ServiceDetails = ({ loading }) => {
   //   }
   // };
 
-
-
-
+  useEffect(() => {
+    const storedAuthData = localStorage.getItem('authData');
+    console.log("Stored authData:", storedAuthData);
+  }, []);
+  
+  useEffect(() => {
+    console.log("Auth Data on ServiceDetails Load:", authData);
+  }, [authData]);
+  
+  useEffect(() => {
+    if (authData && authData.user) {
+      console.log("Logged in user:", authData.user);
+    } else {
+      console.warn("No user data found. Make sure to log in.");
+    }
+  }, [authData]);
+  
+  
   useEffect(() => {
     // Fetch product details using the `id` param
     const fetchServiceDetails = async () => {
       if (id) {  // Add a check to ensure id exists
         try {
-          console.log("hetha" + id)
+          
           const response = await axios.get(`https://backendbillcom-production.up.railway.app/tp/api/products/${id}`);
           setServiceDetails(response.data);
           setCurrentImage(response.data.image);
@@ -214,47 +229,43 @@ const ServiceDetails = ({ loading }) => {
       }
     };
 
-    // async function fetchReviews() {
-    //   try {
-    //     const response = await axios.get(`http://localhost:8083/tp/api/reviews/product/${id}`);
-    //     const reviewsData = response.data;
-    //     setReviews(reviewsData);
 
-    //     // Calculate the average and distribution of ratings
-    //     const totalReviews = reviewsData.length;
 
-    //     const totalQualityRating = reviewsData.reduce((sum, review) => sum + review.qualityRating, 0);
-    //     const totalPriceRating = reviewsData.reduce((sum, review) => sum + review.priceRating, 0);
-    //     const totalValueRating = reviewsData.reduce((sum, review) => sum + review.valueRating, 0);
 
-    //     const averageRating = (totalQualityRating + totalPriceRating + totalValueRating) / (totalReviews * 3);
-
-    //     const qualityRatingPercentage = (totalQualityRating / (totalReviews * 5)) * 100;
-    //     const priceRatingPercentage = (totalPriceRating / (totalReviews * 5)) * 100;
-    //     const valueRatingPercentage = (totalValueRating / (totalReviews * 5)) * 100;
-
-    //     setAverageRating(averageRating.toFixed(2));
-    //     setRatingDistribution({
-    //       quality: qualityRatingPercentage.toFixed(2),
-    //       price: priceRatingPercentage.toFixed(2),
-    //       value: valueRatingPercentage.toFixed(2),
-    //     });
-
-    //     // Fetch like and dislike statuses
-    //     const user = JSON.parse(localStorage.getItem("user"));
-    //     if (user) {
-    //       const likeDislikeResponse = await axios.get(`http://localhost:8083/tp/api/reviews/user-review-status/${user.idUser}/${id}`);
-    //       const { likes, dislikes } = likeDislikeResponse.data;
-    //       setLikeStatus(likes);
-    //       setDislikeStatus(dislikes);
-    //     }
-    //   } catch (error) {
-    //     console.error("Error fetching reviews:", error);
-    //   }
-    // }
-
+    async function fetchReviews() {
+      try {
+        const response = await axios.get(`https://backendbillcom-production.up.railway.app/tp/api/reviews/getbyid/${id}`);
+        const reviewsData = response.data;
+        setReviews(reviewsData);
+    
+        // Calculate the average and distribution of ratings
+        const totalReviews = reviewsData.length;
+    
+        const totalQualityRating = reviewsData.reduce((sum, review) => sum + review.qualityRating, 0);
+        const totalPriceRating = reviewsData.reduce((sum, review) => sum + review.priceRating, 0);
+        const totalValueRating = reviewsData.reduce((sum, review) => sum + review.valueRating, 0);
+    
+        const averageRating = (totalQualityRating + totalPriceRating + totalValueRating) / (totalReviews * 3);
+    
+        const qualityRatingPercentage = (totalQualityRating / (totalReviews * 5)) * 100;
+        const priceRatingPercentage = (totalPriceRating / (totalReviews * 5)) * 100;
+        const valueRatingPercentage = (totalValueRating / (totalReviews * 5)) * 100;
+    
+        setAverageRating(averageRating.toFixed(2));
+        setRatingDistribution({
+          quality: qualityRatingPercentage.toFixed(2),
+          price: priceRatingPercentage.toFixed(2),
+          value: valueRatingPercentage.toFixed(2),
+        });
+    
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      }
+    }
+    
     fetchServiceDetails();
-    //fetchReviews();
+    fetchReviews();
+    
   }, [id]);
 
 
@@ -480,99 +491,88 @@ const ServiceDetails = ({ loading }) => {
     );
   };
 
+
+
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-
-    const errors = {};
-
-    if (!review.name) {
-      errors.name = "Name is required.";
-    } else if (/^\d+$/.test(review.name)) {
-      errors.name = "Name cannot be only numbers.";
-    }
-
-    if (!review.comment) {
-      errors.comment = "Comment is required.";
-    } else if (/^\d+$/.test(review.comment)) {
-      errors.comment = "Comment cannot be only numbers.";
-    }
-
-    if (review.priceRating <= 0 || review.priceRating > 5) {
-      errors.priceRating = "Please provide a valid rating for Price.";
-    }
-    if (review.valueRating <= 0 || review.valueRating > 5) {
-      errors.valueRating = "Please provide a valid rating for Value.";
-    }
-    if (review.qualityRating <= 0 || review.qualityRating > 5) {
-      errors.qualityRating = "Please provide a valid rating for Quality.";
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setErrors(errors);
-      return;
-    }
-
-    const user = JSON.parse(localStorage.getItem('user'));
-
-    if (!user || !user.idUser) {
-      console.error("No valid user found in localStorage");
-      setErrors({ submit: "No valid user found" });
-      return;
-    }
-
-    const reviewData = new FormData();
-    reviewData.append("name", review.name);
-    reviewData.append("comment", review.comment);
-    reviewData.append("priceRating", review.priceRating);
-    reviewData.append("valueRating", review.valueRating);
-    reviewData.append("qualityRating", review.qualityRating);
-    reviewData.append("user.idUser", user.idUser);
-    reviewData.append("product.id", serviceDetails.id);
-    reviewData.append("date", new Date().toISOString());
-
-    if (images.length > 0) {
-      reviewData.append("imgreview1", images[0], images[0].name);
-    }
-    if (images.length > 1) {
-      reviewData.append("imgreview2", images[1], images[1].name);
-    }
-
-    try {
-      const response = await axios.post(`http://localhost:8083/tp/api/reviews/add`, reviewData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      setReviews([...reviews, response.data]);
-      setReview({ name: '', comment: '', priceRating: 5, valueRating: 5, qualityRating: 5 });
-      setImages([]);
-
-      // Met à jour l'onglet avant d'afficher l'alerte
-      setSelectedSubTab('listReviews');
-
+  
+    // Vérifier si l'utilisateur est connecté
+    if (!authData || !authData.user || !authData.user.id) {
+      console.error("User ID is not available. Please check if the user is logged in.");
       Swal.fire({
-        title: 'Success!',
-        text: 'Your review has been submitted successfully.',
-        icon: 'success',
-        showConfirmButton: false,
-        timer: 1000,  // 2 secondes
-        timerProgressBar: true,
-      }).then(() => {
-        setTimeout(() => {
-          setSelectedSubTab('listReviews'); // Redirection après le délai
-        }, 3000); // 2 secondes
+        icon: 'error',
+        title: 'You must be logged in to submit a review.',
       });
+      return;
+    }
+  
+    // Continuer avec la logique si l'utilisateur est connecté
+    const userId = authData.user.id;
+    const productId = serviceDetails.id;
+  
+    // Créer un objet FormData et y ajouter les champs texte
+    const formData = new FormData();
+    formData.append("name", review.name);
+    formData.append("comment", review.comment);
+    formData.append("priceRating", review.priceRating);
+    formData.append("valueRating", review.valueRating);
+    formData.append("qualityRating", review.qualityRating);
+    formData.append("user", userId);
+    formData.append("product", id);
+  
+    // Ajouter les images dans le FormData
+    if (images.length > 0) {
+      images.forEach((image, index) => {
+        formData.append(`imgreview${index + 1}`, image);
+      });
+    }
+  
+    console.log("FormData to be submitted:", {
+      name: review.name,
+      comment: review.comment,
+      priceRating: review.priceRating,
+      valueRating: review.valueRating,
+      qualityRating: review.qualityRating,
+      user: { idUser: userId },
+      product: productId,
+      images: images.map((img, idx) => `imgreview${idx + 1}: ${img.name}`),
+    });
+  
+    try {
+      const response = await axios.post(
+        "https://backendbillcom-production.up.railway.app/tp/api/reviews/add",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+  
+      console.log("Review submitted successfully:", response.data);
+      setReviews([...reviews, response.data]);
     } catch (error) {
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        setErrors({ submit: `Error: ${error.response.data.message || "Failed to submit review."}` });
-      } else {
-        console.error("Error:", error.message);
-        setErrors({ submit: "Failed to submit review. Please try again later." });
-      }
+      console.error("Error submitting review:", error);
     }
   };
+  
+  
+  // Fonction pour gérer la sélection des images
+  const handleImageChange = (e) => {
+    const { name, files } = e.target;
+    if (files.length > 0) {
+      setReview({ ...review, [name]: files[0] });
+    }
+  };
+  
+  
+  
+
+
+  
+
+ 
 
 
   const handleStarClick = (category, index) => {
@@ -1105,20 +1105,20 @@ const ServiceDetails = ({ loading }) => {
                     <div key={reviewIndex} className="review-item mb-4 p-4 bg-white rounded-lg shadow-md flex flex-col justify-between">
                       <div>
                         <div className="flex items-center mb-2">
-                          <img
+                          {/* <img
                             src={review.user && review.user.profilePicture
                               ? `http://localhost:8083/tp/uploads/${review.user.profilePicture}`
                               : "/img/user1.jpg"} // Fallback to a default image if no profile picture
                             alt="User Avatar"
                             className="h-8 w-8 mr-3 rounded-full"
-                          />
+                          /> */}
                           <div className="flex flex-col">
                             <div className="flex items-center">
-                              <Typography variant="h6" className="font-bold text-sm">
+                              {/* <Typography variant="h6" className="font-bold text-sm">
                                 {review.user
                                   ? `${maskNom(review.user.nom)} ${review.user.prenom}`
                                   : 'Anonymous'}
-                              </Typography>
+                              </Typography> */}
                               <Typography variant="body1" className="ml-3 text-xs text-gray-500">
                                 {formatDate(review.date)}
                               </Typography>

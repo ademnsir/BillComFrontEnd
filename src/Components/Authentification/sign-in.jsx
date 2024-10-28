@@ -23,7 +23,7 @@ export function SignIn() {
         password: userlogin.password
       });
 
-      localStorage.setItem('user', JSON.stringify(response.data));
+      localStorage.setItem('authData', JSON.stringify(response.data));
 
       navigate('/');
       window.location.reload(); 

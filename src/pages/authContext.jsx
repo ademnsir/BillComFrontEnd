@@ -5,21 +5,32 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [authData, setAuthData] = useState(() => {
     const storedAuthData = localStorage.getItem('authData');
-    console.log(localStorage.getItem('user'));
-
     return storedAuthData ? JSON.parse(storedAuthData) : { user: null };
   });
 
   const setAuthUserData = (user) => {
-    localStorage.setItem('authData', JSON.stringify({ user }));
-    setAuthData({ user });
+    if (user) {
+      localStorage.setItem('authData', JSON.stringify({ user }));
+      setAuthData({ user });
+    } else {
+      console.error('User data is invalid.');
+    }
   };
 
   useEffect(() => {
-    const storedAuthData = localStorage.getItem('authData');
-    if (storedAuthData) {
-      setAuthData(JSON.parse(storedAuthData));
-    }
+    const handleStorageChange = () => {
+      const storedAuthData = localStorage.getItem('authData');
+      if (storedAuthData) {
+        setAuthData(JSON.parse(storedAuthData));
+      }
+    };
+
+    // Sync state with localStorage changes
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (

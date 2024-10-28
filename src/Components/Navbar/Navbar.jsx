@@ -39,7 +39,7 @@ function Navbar({ routes, setIsLoggedIn }) {
   };
 
   useEffect(() => {
-    const userConecteStr = localStorage.getItem('user');
+    const userConecteStr = localStorage.getItem('authData');
     if (userConecteStr) {
       const parsedUser = JSON.parse(userConecteStr);
       setUserConecte(parsedUser);
@@ -85,7 +85,7 @@ function Navbar({ routes, setIsLoggedIn }) {
 
   const logout = () => {
     setShowLogoutModal(false);
-    localStorage.removeItem('user');
+    localStorage.removeItem('authData');
     setUserConecte(null);
     setUserImage(null);
     setIsLoggedIn(false);
@@ -139,7 +139,7 @@ function Navbar({ routes, setIsLoggedIn }) {
             }
         });
 
-        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem('authData', JSON.stringify(response.data));
         setUserConecte(response.data);
         setUserImage(`http://localhost:8083/tp/uploads/${response.data.profilePicture}`);
         setShowSignInDropdown(false);
