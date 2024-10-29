@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   const setAuthUserData = (user) => {
     if (user) {
+      // Stockez toutes les informations de l'utilisateur dans le local storage
       localStorage.setItem('authData', JSON.stringify({ user }));
       setAuthData({ user });
     } else {

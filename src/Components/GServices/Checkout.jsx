@@ -35,7 +35,7 @@ const Checkout = () => {
     address: '',
     postalCode: '',
     country: '',
-    phone: '',
+    telephone: '',
     email: ''
   });
   const [showDetails, setShowDetails] = useState(true);
@@ -49,30 +49,34 @@ const Checkout = () => {
   const MySwal = withReactContent(Swal);
 
   // Fonction pour initialiser formData
-  const initializeFormData = (user) => {
-    console.log("Utilisateur passé à initializeFormData :", user); // Ajoutez ce log ici
-  
-    // Ajouter des valeurs par défaut si certaines propriétés sont manquantes
-    setFormData({
-      firstName: user?.prenom ?? '',
-      lastName: user?.nom ?? '',
-      address: user?.adresse ?? '', // Ajoutez une logique de fallback ici si l'adresse est manquante
-      postalCode: user?.codePostal ?? '', // Même logique pour codePostal
-      country: user?.pays ?? '', // Même logique pour pays
-      phone: user?.telephone ?? '', // Même logique pour téléphone
-      email: user?.email ?? ''
-    });
-  
-    console.log("FormData initialisé :", {
-      firstName: user?.prenom ?? '',
-      lastName: user?.nom ?? '',
-      address: user?.adresse ?? '',
-      postalCode: user?.codePostal ?? '',
-      country: user?.pays ?? '',
-      phone: user?.telephone ?? '',
-      email: user?.email ?? ''
-    });
-  };
+// Fonction pour initialiser formData
+const initializeFormData = (user) => {
+  console.log("Utilisateur passé à initializeFormData :", user);
+
+  // Assurez-vous d'initialiser tous les champs, même s'ils sont vides
+  setFormData({
+    firstName: user?.prenom ?? '',
+    lastName: user?.nom ?? '',
+    address: user?.adresse ?? '',
+    postalCode: user?.codePostal ?? '',
+    country: user?.pays ?? '',
+    telephone: user?.telephone ?? '',
+    email: user?.email ?? '',
+    dateNaissance: user?.dateNaissance ?? ''
+  });
+
+  console.log("FormData initialisé :", {
+    firstName: user?.prenom ?? '',
+    lastName: user?.nom ?? '',
+    address: user?.adresse ?? '',
+    postalCode: user?.codePostal ?? '',
+    country: user?.pays ?? '',
+    telephone: user?.telephone ?? '',
+    email: user?.email ?? '',
+    dateNaissance: user?.dateNaissance ?? ''
+  });
+};
+
   
 
   // Fetch user data when the component mounts or authData changes
@@ -109,143 +113,174 @@ const Checkout = () => {
     setLoading(true);
     let storedUser = authData;
     if (!storedUser || !storedUser.user || !storedUser.user.id) {
-      try {
-        const storedData = JSON.parse(localStorage.getItem('authData'));
-        if (storedData && storedData.user) {
-          storedUser = storedData;
+        try {
+            const storedData = JSON.parse(localStorage.getItem('authData'));
+            if (storedData && storedData.user) {
+                storedUser = storedData;
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
-      }
     }
 
     if (!storedUser || !storedUser.user || !storedUser.user.id) {
-      console.error('Utilisateur non authentifié.');
-      setLoading(false);
-      // Rediriger ou afficher un message d'erreur approprié
-      MySwal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Utilisateur non authentifié. Veuillez vous connecter.',
-      });
-      navigate('/login'); // Assurez-vous que cette route existe
-      return;
+        console.error('Utilisateur non authentifié.');
+        setLoading(false);
+        // Rediriger ou afficher un message d'erreur approprié
+        MySwal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Utilisateur non authentifié. Veuillez vous connecter.',
+        });
+        navigate('/login'); // Assurez-vous que cette route existe
+        return;
     }
 
     const userId = storedUser.user.id;
 
-    const userUpdate = {
-      idUser: userId,  // Assurez-vous que l'ID utilisateur est inclus
-      nom: formData.lastName,
-      prenom: formData.firstName,
-      email: formData.email,
-      adresse: formData.address,
-      pays: formData.country,
-      telephone: formData.phone,
-      codePostal: formData.postalCode,
-    };
-
     try {
-      // Update user information
-      await axios.put('https://backendbillcom-production.up.railway.app/tp/api/user/updateUser', userUpdate);
+        // Prepare the items array to send to backend
+        const items = cartItems.map((item) => ({
+            name: item.title,
+            description: item.description || 'No description', // Ajoutez une description si nécessaire
+            image: item.image,
+            price: parseFloat(item.price), // Assurez-vous que le prix est un nombre
+            quantity: item.quantity,
+        }));
 
-      // Prepare order data
-      const orderData = {
-        totalPrice: getTotalPrice() + 4.700,
-        user: userUpdate,
-        products: cartItems.map(item => ({
-          id: item.id,
-          name: item.title,
-          price: item.promo
-            ? (parseFloat(item.price) * (1 - Math.abs(item.promo) / 100)).toFixed(2)
-            : parseFloat(item.price).toFixed(2),
-          quantity: item.quantity,
-          description: item.description || "",
-          image: `https://backendbillcom-production.up.railway.app/uploads/${item.image}`,
-        })),
-        address: formData,
-      };
+        // Prepare order data for Stripe
+        const orderData = {
+            items, // Send product details to backend
+            address: formData.address,
+        };
 
-      setOrderTotal(orderData.totalPrice);
-      setOrderData(orderData);
-
-      // Online payment using Stripe
-      if (paymentMethod === 'online') {
+        // Make the request to create a Stripe session
         const response = await axios.post("https://backendbillcom-production.up.railway.app/tp/api/payment/create-checkout-session", orderData);
         const session = response.data;
 
         if (session.error) {
-          console.error("Payment failed: " + session.error);
-          setLoading(false);
-          MySwal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: 'Le paiement a échoué. Veuillez réessayer.',
-          });
-          return;
+            console.error("Payment failed: " + session.error);
+            setLoading(false);
+            MySwal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: 'Le paiement a échoué. Veuillez réessayer.',
+            });
+            return;
         }
 
         const stripe = await loadStripe("pk_test_51OErmACis87pjNWpmR1mA9OY8bC9joB8m3yMTqOlDqonuPHoOla3qdFxRI4l23Rqpn4RjSQjj1H75UgBbpTr2Os800jsLoQ4TE");
         await stripe.redirectToCheckout({ sessionId: session.id });
         setLoading(false);
-        navigate('/paymentSucces');
-      } else {
-        // Handle cash on delivery case
-        setModalIsOpen(true);
-        setLoading(false);
-      }
     } catch (error) {
-      console.error('Error processing order:', error);
-      setLoading(false);
-      MySwal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Une erreur est survenue lors du traitement de votre commande.',
-      });
+        console.error('Error processing order:', error);
+        setLoading(false);
+        MySwal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Une erreur est survenue lors du traitement de votre commande.',
+        });
     }
-  };
+};
+
+  
 
   const confirmOrder = async () => {
     setLoading(true);
     try {
+      const userId = authData?.user?.id || formData.userId;
+  
+      // Log pour vérifier si l'utilisateur est bien récupéré
+      console.log('=== DÉBUT CONFIRMATION COMMANDE ===');
+      console.log('ID utilisateur utilisé pour la commande:', userId);
+  
+      // Vérifier les éléments du panier
+      console.log('Contenu du panier:', cartItems);
+  
+      // Mapping des produits en cherchant _id au lieu de id
+      const products = cartItems.map(item => {
+        const productId = item.id || item._id; // Essayez d'utiliser `_id` si `id` est absent
+        if (!productId) {
+          console.error('Produit sans ID détecté:', item);
+        } else {
+          console.log('ID de produit trouvé:', productId);
+        }
+        return productId;
+      });
+  
+      // Log pour vérifier si les produits du panier sont bien récupérés
+      console.log('Produits sélectionnés pour la commande (liste des IDs):', products);
+  
+      // Vérifier si tous les produits ont un ID valide
+      if (products.includes(undefined)) {
+        throw new Error('Un ou plusieurs produits du panier ne contiennent pas d\'ID valide.');
+      }
+  
       const orderData = {
         totalPrice: getTotalPrice() + 4.700,
-        user: formData,  // user data from form
-        products: cartItems.map(item => item.id),
+        user: userId,  // Utiliser l'ID de l'utilisateur
+        products,      // Envoyer les IDs des produits seulement
         address: formData.address,
         paymentMethod: paymentMethod
       };
-
-      const orderResponse = await axios.post('https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder', orderData);
-
+  
+      // Log pour vérifier les données de la commande avant envoi
+      console.log('Données de la commande préparées:', orderData);
+  
+      // Envoi de la requête d'ajout de commande
+      const orderResponse = await axios.post(
+        'https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder',
+        orderData
+      );
+  
+      // Vérifier la réponse de l'API après la requête
+      console.log('Réponse de l\'API après création de commande:', orderResponse);
+  
       if (orderResponse.status === 201) {
         sessionStorage.setItem('commandeSuccess', 'true');
         setModalIsOpen(false);
-        MySwal.fire({
+  
+        // Utilisez `await` pour garantir que SweetAlert s'affiche correctement
+        await MySwal.fire({
           position: 'bottom-right',
           icon: 'success',
           title: 'Order placed successfully!',
           showConfirmButton: false,
           timer: 3000,
-        }).then(() => {
-          navigate('/commandeSucces');
-          setLoading(false);
         });
-      } else {
-        console.error('Error creating order.');
+  
         setLoading(false);
-        MySwal.fire({
+        navigate('/store?type=all');  // Rediriger après la confirmation vers /store?type=all
+        console.log('=== FIN CONFIRMATION COMMANDE : SUCCÈS ===');
+      } else {
+        console.error('Erreur lors de la création de la commande. Statut:', orderResponse.status);
+        console.error('Détails de la réponse:', orderResponse);
+        setLoading(false);
+        await MySwal.fire({
           icon: 'error',
           title: 'Erreur',
           text: 'Une erreur est survenue lors de la création de votre commande.',
         });
       }
     } catch (error) {
-      console.error('Error confirming order:', error);
+      console.error('Erreur lors de la confirmation de la commande:', error.response ? error.response.data : error.message);
       setLoading(false);
-      navigate('/errorpage');
+      console.log('=== FIN CONFIRMATION COMMANDE : ÉCHEC ===');
+      
+      // Enlevez la redirection automatique vers `/errorpage`
+      await MySwal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Une erreur est survenue lors de la confirmation de votre commande.',
+      });
     }
   };
+  
+
+  
+  
+  
+  
 
   return (
     <div className="container mx-auto mt-40 p-4">
@@ -346,10 +381,10 @@ const Checkout = () => {
               />
               <input
                 type="text"
-                name="phone"
-                value={formData.phone}
+                name="telephone"
+                value={formData.telephone}
                 onChange={handleChange}
-                placeholder="Phone"
+                placeholder="telephone"
                 className="border rounded p-2"
               />
               <input

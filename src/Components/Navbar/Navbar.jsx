@@ -139,14 +139,29 @@ function Navbar({ routes, setIsLoggedIn }) {
             }
         });
 
-        localStorage.setItem('authData', JSON.stringify(response.data));
-        setUserConecte(response.data);
-        setUserImage(`http://localhost:8083/tp/uploads/${response.data.profilePicture}`);
-        setShowSignInDropdown(false);
-        setIsLoggedIn(true);
-        setLoading(false);
-        navigate('/');
-        window.location.reload();
+        if (response.data.success) {
+            // Récupérez les données utilisateur complètes
+            const user = response.data.user;
+
+            // Stockez toutes les données utilisateur dans localStorage
+            localStorage.setItem('authData', JSON.stringify({ user }));
+            
+            // Mettez à jour l'état avec les informations de l'utilisateur
+            setUserConecte(user);
+            
+            // Gérer l'image de profil si disponible
+            if (user.profilePicture) {
+                setUserImage(`http://localhost:8083/tp/uploads/${user.profilePicture}`);
+            }
+
+            setShowSignInDropdown(false);
+            setIsLoggedIn(true);
+            setLoading(false);
+            navigate('/');
+            window.location.reload();
+        } else {
+            throw new Error('Login unsuccessful');
+        }
     } catch (error) {
         setLoading(false);
         if (error.response) {
@@ -158,6 +173,7 @@ function Navbar({ routes, setIsLoggedIn }) {
         }
     }
 };
+
 
 
   const toggleProfileDropdown = () => {
