@@ -38,58 +38,35 @@ const Checkout = () => {
     telephone: '',
     email: ''
   });
+  const [deliveryConfirmationOpen, setDeliveryConfirmationOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('online'); // Default to 'online' payment method
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [orderTotal, setOrderTotal] = useState(0);
-  const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(false); // State for loading effect
   const { authData } = useAuth();  // Get user data from AuthContext
 
   const MySwal = withReactContent(Swal);
 
   // Fonction pour initialiser formData
-// Fonction pour initialiser formData
-const initializeFormData = (user) => {
-  console.log("Utilisateur passé à initializeFormData :", user);
-
-  // Assurez-vous d'initialiser tous les champs, même s'ils sont vides
-  setFormData({
-    firstName: user?.prenom ?? '',
-    lastName: user?.nom ?? '',
-    address: user?.adresse ?? '',
-    postalCode: user?.codePostal ?? '',
-    country: user?.pays ?? '',
-    telephone: user?.telephone ?? '',
-    email: user?.email ?? '',
-    dateNaissance: user?.dateNaissance ?? ''
-  });
-
-  console.log("FormData initialisé :", {
-    firstName: user?.prenom ?? '',
-    lastName: user?.nom ?? '',
-    address: user?.adresse ?? '',
-    postalCode: user?.codePostal ?? '',
-    country: user?.pays ?? '',
-    telephone: user?.telephone ?? '',
-    email: user?.email ?? '',
-    dateNaissance: user?.dateNaissance ?? ''
-  });
-};
-
-  
+  const initializeFormData = (user) => {
+    setFormData({
+      firstName: user?.prenom ?? '',
+      lastName: user?.nom ?? '',
+      address: user?.adresse ?? '',
+      postalCode: user?.codePostal ?? '',
+      country: user?.pays ?? '',
+      telephone: user?.telephone ?? '',
+      email: user?.email ?? '',
+    });
+  };
 
   // Fetch user data when the component mounts or authData changes
   useEffect(() => {
-    
     if (authData && authData.user) {
-      // Utiliser authData du contexte
       initializeFormData(authData.user);
     } else {
-      // Fallback pour utiliser le local storage directement
       try {
         const storedData = JSON.parse(localStorage.getItem('authData'));
-        console.log("Utilisateur récupéré depuis localStorage:", storedData);
         if (storedData && storedData.user) {
           initializeFormData(storedData.user);
         }
@@ -110,137 +87,115 @@ const initializeFormData = (user) => {
   };
 
   const handlePayment = async () => {
+    if (paymentMethod === 'delivery') {
+      // Payment on delivery: Open confirmation modal
+      handleDeliveryOrder();
+    } else if (paymentMethod === 'online') {
+      // Online payment: Proceed with Stripe
+      await handleStripePayment();
+    }
+  };
+
+  const handleDeliveryOrder = () => {
+    setDeliveryConfirmationOpen(true);
+  };
+
+  const handleStripePayment = async () => {
     setLoading(true);
     let storedUser = authData;
     if (!storedUser || !storedUser.user || !storedUser.user.id) {
-        try {
-            const storedData = JSON.parse(localStorage.getItem('authData'));
-            if (storedData && storedData.user) {
-                storedUser = storedData;
-            }
-        } catch (error) {
-            console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
+      try {
+        const storedData = JSON.parse(localStorage.getItem('authData'));
+        if (storedData && storedData.user) {
+          storedUser = storedData;
         }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
+      }
     }
 
     if (!storedUser || !storedUser.user || !storedUser.user.id) {
-        console.error('Utilisateur non authentifié.');
-        setLoading(false);
-        // Rediriger ou afficher un message d'erreur approprié
-        MySwal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: 'Utilisateur non authentifié. Veuillez vous connecter.',
-        });
-        navigate('/login'); // Assurez-vous que cette route existe
-        return;
+      console.error('Utilisateur non authentifié.');
+      setLoading(false);
+      MySwal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Utilisateur non authentifié. Veuillez vous connecter.',
+      });
+      navigate('/login');
+      return;
     }
 
     const userId = storedUser.user.id;
 
     try {
-        // Prepare the items array to send to backend
-        const items = cartItems.map((item) => ({
-            name: item.title,
-            description: item.description || 'No description', // Ajoutez une description si nécessaire
-            image: item.image,
-            price: parseFloat(item.price), // Assurez-vous que le prix est un nombre
-            quantity: item.quantity,
-        }));
+      const items = cartItems.map((item) => ({
+        name: item.title,
+        description: item.description || 'No description',
+        image: item.image,
+        price: parseFloat(item.price),
+        quantity: item.quantity,
+      }));
 
-        // Prepare order data for Stripe
-        const orderData = {
-            items, // Send product details to backend
-            address: formData.address,
-        };
+      const orderData = {
+        items,
+        address: formData.address,
+      };
 
-        // Make the request to create a Stripe session
-        const response = await axios.post("https://backendbillcom-production.up.railway.app/tp/api/payment/create-checkout-session", orderData);
-        const session = response.data;
+      const response = await axios.post("https://backendbillcom-production.up.railway.app/tp/api/payment/create-checkout-session", orderData);
+      const session = response.data;
 
-        if (session.error) {
-            console.error("Payment failed: " + session.error);
-            setLoading(false);
-            MySwal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: 'Le paiement a échoué. Veuillez réessayer.',
-            });
-            return;
-        }
-
-        const stripe = await loadStripe("pk_test_51OErmACis87pjNWpmR1mA9OY8bC9joB8m3yMTqOlDqonuPHoOla3qdFxRI4l23Rqpn4RjSQjj1H75UgBbpTr2Os800jsLoQ4TE");
-        await stripe.redirectToCheckout({ sessionId: session.id });
-        setLoading(false);
-    } catch (error) {
-        console.error('Error processing order:', error);
+      if (session.error) {
+        console.error("Payment failed: " + session.error);
         setLoading(false);
         MySwal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: 'Une erreur est survenue lors du traitement de votre commande.',
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Le paiement a échoué. Veuillez réessayer.',
         });
-    }
-};
+        return;
+      }
 
-  
+      const stripe = await loadStripe("pk_test_51OErmACis87pjNWpmR1mA9OY8bC9joB8m3yMTqOlDqonuPHoOla3qdFxRI4l23Rqpn4RjSQjj1H75UgBbpTr2Os800jsLoQ4TE");
+      await stripe.redirectToCheckout({ sessionId: session.id });
+      setLoading(false);
+    } catch (error) {
+      console.error('Error processing order:', error);
+      setLoading(false);
+      MySwal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Une erreur est survenue lors du traitement de votre commande.',
+      });
+    }
+  };
 
   const confirmOrder = async () => {
     setLoading(true);
     try {
       const userId = authData?.user?.id || formData.userId;
-  
-      // Log pour vérifier si l'utilisateur est bien récupéré
-      console.log('=== DÉBUT CONFIRMATION COMMANDE ===');
-      console.log('ID utilisateur utilisé pour la commande:', userId);
-  
-      // Vérifier les éléments du panier
-      console.log('Contenu du panier:', cartItems);
-  
-      // Mapping des produits en cherchant _id au lieu de id
-      const products = cartItems.map(item => {
-        const productId = item.id || item._id; // Essayez d'utiliser `_id` si `id` est absent
-        if (!productId) {
-          console.error('Produit sans ID détecté:', item);
-        } else {
-          console.log('ID de produit trouvé:', productId);
-        }
-        return productId;
-      });
-  
-      // Log pour vérifier si les produits du panier sont bien récupérés
-      console.log('Produits sélectionnés pour la commande (liste des IDs):', products);
-  
-      // Vérifier si tous les produits ont un ID valide
+      const products = cartItems.map(item => item.id || item._id);
+
       if (products.includes(undefined)) {
-        throw new Error('Un ou plusieurs produits du panier ne contiennent pas d\'ID valide.');
       }
-  
+
       const orderData = {
         totalPrice: getTotalPrice() + 4.700,
-        user: userId,  // Utiliser l'ID de l'utilisateur
-        products,      // Envoyer les IDs des produits seulement
+        user: userId,
+        products,
         address: formData.address,
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
       };
-  
-      // Log pour vérifier les données de la commande avant envoi
-      console.log('Données de la commande préparées:', orderData);
-  
-      // Envoi de la requête d'ajout de commande
+
       const orderResponse = await axios.post(
         'https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder',
         orderData
       );
-  
-      // Vérifier la réponse de l'API après la requête
-      console.log('Réponse de l\'API après création de commande:', orderResponse);
-  
+
       if (orderResponse.status === 201) {
         sessionStorage.setItem('commandeSuccess', 'true');
         setModalIsOpen(false);
-  
-        // Utilisez `await` pour garantir que SweetAlert s'affiche correctement
+
         await MySwal.fire({
           position: 'bottom-right',
           icon: 'success',
@@ -248,13 +203,11 @@ const initializeFormData = (user) => {
           showConfirmButton: false,
           timer: 3000,
         });
-  
+
         setLoading(false);
-        navigate('/store?type=all');  // Rediriger après la confirmation vers /store?type=all
-        console.log('=== FIN CONFIRMATION COMMANDE : SUCCÈS ===');
+        navigate('/store?type=all');
       } else {
         console.error('Erreur lors de la création de la commande. Statut:', orderResponse.status);
-        console.error('Détails de la réponse:', orderResponse);
         setLoading(false);
         await MySwal.fire({
           icon: 'error',
@@ -265,9 +218,6 @@ const initializeFormData = (user) => {
     } catch (error) {
       console.error('Erreur lors de la confirmation de la commande:', error.response ? error.response.data : error.message);
       setLoading(false);
-      console.log('=== FIN CONFIRMATION COMMANDE : ÉCHEC ===');
-      
-      // Enlevez la redirection automatique vers `/errorpage`
       await MySwal.fire({
         icon: 'error',
         title: 'Erreur',
@@ -275,16 +225,10 @@ const initializeFormData = (user) => {
       });
     }
   };
-  
-
-  
-  
-  
-  
 
   return (
     <div className="container mx-auto mt-40 p-4">
-      <Loading isVisible={loading} /> {/* Add Loading component here */}
+      <Loading isVisible={loading} />
       <style>
         {`
           .custom-radio-container {
@@ -400,31 +344,31 @@ const initializeFormData = (user) => {
               <Typography variant="h6" className="font-bold mb-2">Payment Method</Typography>
               <div className="custom-radio-container">
                 <div className="custom-radio">
-                  <input 
-                    type="radio" 
-                    id="online" 
-                    name="paymentMethod" 
-                    value="online" 
-                    checked={paymentMethod === 'online'} 
-                    onChange={() => setPaymentMethod('online')} 
+                  <input
+                    type="radio"
+                    id="online"
+                    name="paymentMethod"
+                    value="online"
+                    checked={paymentMethod === 'online'}
+                    onChange={() => setPaymentMethod('online')}
                   />
                   <label htmlFor="online">Online Payment</label>
                 </div>
                 <div className="custom-radio">
-                  <input 
-                    type="radio" 
-                    id="delivery" 
-                    name="paymentMethod" 
-                    value="delivery" 
-                    checked={paymentMethod === 'delivery'} 
-                    onChange={() => setPaymentMethod('delivery')} 
+                  <input
+                    type="radio"
+                    id="delivery"
+                    name="paymentMethod"
+                    value="delivery"
+                    checked={paymentMethod === 'delivery'}
+                    onChange={() => setPaymentMethod('delivery')}
                   />
                   <label htmlFor="delivery">Payment on Delivery</label>
                 </div>
               </div>
             </div>
             <div className="flex justify-between mt-6">
-              <Button 
+              <Button
                 className="flex items-center border text-white"
                 style={{ borderColor: dynamicColor, backgroundColor: dynamicColor }}
                 onClick={handlePayment}
@@ -479,13 +423,40 @@ const initializeFormData = (user) => {
       >
         <Typography variant="h5" className="font-bold">Order Confirmation</Typography>
         <Typography className="my-4">Are you sure you want to place this order?</Typography>
-        <Typography className="my-4">Total Amount: {orderTotal.toFixed(3)} DT</Typography>
+        <Typography className="my-4">Total Amount: {(getTotalPrice() + 4.700).toFixed(3)} DT</Typography>
         <div className="flex justify-between">
           <Button onClick={confirmOrder} className="text-white" style={{ backgroundColor: dynamicColor }}>
             Yes, I Confirm
           </Button>
           <Button onClick={() => setModalIsOpen(false)} className="bg-gray-500 text-white">
             Close
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={deliveryConfirmationOpen}
+        onRequestClose={() => setDeliveryConfirmationOpen(false)}
+        style={customStyles}
+        contentLabel="Order Confirmation"
+      >
+        <Typography variant="h5" className="font-bold">Order Confirmation</Typography>
+        <Typography className="my-4">You are ready to place an order with payment on delivery. Are you sure?</Typography>
+        <div className="flex justify-between">
+          <Button
+            onClick={() => {
+              confirmOrder();
+              setDeliveryConfirmationOpen(false);
+            }}
+            className="text-white"
+            style={{ backgroundColor: dynamicColor }}
+          >
+            Yes, Confirm
+          </Button>
+          <Button
+            onClick={() => setDeliveryConfirmationOpen(false)}
+            className="bg-gray-500 text-white"
+          >
+            No, Cancel
           </Button>
         </div>
       </Modal>
