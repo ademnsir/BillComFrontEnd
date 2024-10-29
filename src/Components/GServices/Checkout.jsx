@@ -50,15 +50,19 @@ const Checkout = () => {
 
   // Fonction pour initialiser formData
   const initializeFormData = (user) => {
+    console.log("Utilisateur passé à initializeFormData :", user); // Ajoutez ce log ici
+  
+    // Ajouter des valeurs par défaut si certaines propriétés sont manquantes
     setFormData({
       firstName: user?.prenom ?? '',
       lastName: user?.nom ?? '',
-      address: user?.adresse ?? '',
-      postalCode: user?.codePostal ?? '',
-      country: user?.pays ?? '',
-      phone: user?.telephone ?? '',
+      address: user?.adresse ?? '', // Ajoutez une logique de fallback ici si l'adresse est manquante
+      postalCode: user?.codePostal ?? '', // Même logique pour codePostal
+      country: user?.pays ?? '', // Même logique pour pays
+      phone: user?.telephone ?? '', // Même logique pour téléphone
       email: user?.email ?? ''
     });
+  
     console.log("FormData initialisé :", {
       firstName: user?.prenom ?? '',
       lastName: user?.nom ?? '',
@@ -69,9 +73,11 @@ const Checkout = () => {
       email: user?.email ?? ''
     });
   };
+  
 
   // Fetch user data when the component mounts or authData changes
   useEffect(() => {
+    
     if (authData && authData.user) {
       // Utiliser authData du contexte
       initializeFormData(authData.user);

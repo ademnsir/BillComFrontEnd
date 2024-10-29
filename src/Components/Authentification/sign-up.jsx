@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Input, Checkbox, Button, Typography, Avatar, Radio } from "@material-tailwind/react";
+import { Input, Checkbox, Button, Typography, Radio } from "@material-tailwind/react";
 import { Link, useNavigate } from "react-router-dom";
 import Select from "react-select";
 import countryList from 'react-select-country-list';
@@ -19,13 +19,14 @@ export function SignUp() {
     Phone: '',
     Checkbox: true,
     Type: "Utilisateur",
-    Genre: '', // Ajout du champ genre
+    Genre: '',
+    DateNaissance: '', // Ajout du champ Date de Naissance
   });
 
   const [selectedCountry, setSelectedCountry] = useState('');
   const [errors, setErrors] = useState({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
- 
+
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const images = [
@@ -59,17 +60,9 @@ export function SignUp() {
 
     switch (fieldName) {
       case 'FirstName':
-        return value
-          ? nameRegex.test(value)
-            ? ''
-            : 'First name must be at least 3 characters long and contain only letters.'
-          : 'Please enter your first name.';
+        return value ? (nameRegex.test(value) ? '' : 'First name must be at least 3 characters long and contain only letters.') : 'Please enter your first name.';
       case 'LastName':
-        return value
-          ? nameRegex.test(value)
-            ? ''
-            : 'Last name must be at least 3 characters long and contain only letters.'
-          : 'Please enter your last name.';
+        return value ? (nameRegex.test(value) ? '' : 'Last name must be at least 3 characters long and contain only letters.') : 'Please enter your last name.';
       case 'Email':
         return value ? (/^\S+@\S+\.\S+$/.test(value) ? '' : 'Please enter a valid email address.') : 'Please enter your email address.';
       case 'Password':
@@ -84,6 +77,8 @@ export function SignUp() {
         return value ? '' : 'Please enter your phone number.';
       case 'Genre':
         return value ? '' : 'Please select your gender.';
+      case 'DateNaissance':
+        return value ? '' : 'Please enter your date of birth.';
       default:
         return '';
     }
@@ -93,7 +88,6 @@ export function SignUp() {
     setUser({ ...user, [fieldName]: value });
     setErrors({ ...errors, [`${fieldName}Error`]: validateField(fieldName, value) });
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -109,32 +103,31 @@ export function SignUp() {
       return;
     }
 
-    // Mise à jour : formData correspond à ce que le backend attend
     const formData = {
       nom: user.LastName,
       prenom: user.FirstName,
       email: user.Email,
       password: user.Password,
       confirmPassword: user.ConfirmPassword,
-      pays: selectedCountry.label,
+      pays: selectedCountry?.label || '',
       adresse: user.Address,
       codePostal: user.PostalCode,
       telephone: user.Phone,
-      genre: user.Genre, // Ajouter le genre
-      dateNaissance: '' // Si nécessaire, ajoute une logique pour récupérer la date de naissance
+      genre: user.Genre,
+      dateNaissance: user.DateNaissance // Assurez-vous que la date de naissance est incluse
     };
 
     try {
       const response = await axios.post('https://backendbillcom-production.up.railway.app/auth/register', formData, {
         headers: {
-          'Content-Type': 'application/json', // Le format attendu est JSON et non multipart/form-data
+          'Content-Type': 'application/json',
         },
       });
       console.log('User added:', response.data);
       setShowSuccessAlert(true);
-      setUser({ FirstName: '', LastName: '', Email: '', Password: '', ConfirmPassword: '', Country: '', Address: '', PostalCode: '', Phone: '', Checkbox: true, Type: 'Utilisateur', Genre: '' });
-      setSelectedCountry(''); // Réinitialisation du pays sélectionné après soumission
-  
+      setUser({ FirstName: '', LastName: '', Email: '', Password: '', ConfirmPassword: '', Country: '', Address: '', PostalCode: '', Phone: '', Checkbox: true, Type: 'Utilisateur', Genre: '', DateNaissance: '' });
+      setSelectedCountry('');
+
       setErrors({});
       
       Swal.fire({
@@ -142,20 +135,18 @@ export function SignUp() {
         text: 'Registration completed successfully.',
         icon: 'success',
         showConfirmButton: false,
-        timer: 1000,  // 1 seconde
+        timer: 1000,
         timerProgressBar: true,
       }).then(() => {
         setTimeout(() => {
-          navigate('/sign-in'); // Redirection après le délai
-        }, 3000); // 3 secondes
+          navigate('/sign-in');
+        }, 3000);
       });
     } catch (error) {
       console.error('Error adding user:', error);
       setErrors({ ...errors, formError: 'Failed to add user. Please try again later.' });
     }
   };
-
-
 
   return (
     <div className='pt-24'>
@@ -168,18 +159,6 @@ export function SignUp() {
           </div>
 
           <form className="mx-auto w-80 max-w-screen-lg lg:w-1/2" onSubmit={handleSubmit}>
-            <div className="flex flex-col items-center mb-6">
-             
-              <Typography
-                variant="small"
-                color="blue-gray"
-                className="mt-2 cursor-pointer"
-                onClick={() => document.getElementById('profile_picture').click()}
-              >
-                Click to choose your profile image
-              </Typography>
-            </div>
-
             <div className="flex flex-col sm:flex-row">
               <div className="flex-1 mr-1">
                 <Input
@@ -319,6 +298,21 @@ export function SignUp() {
               {errors.genreError && <p className="text-red-500 text-xs italic mt-1">{errors.genreError}</p>}
             </div>
 
+            <div className="mb-1 flex flex-col gap-6 pb-4">
+              <Input
+                value={user.DateNaissance}
+                onChange={(e) => handleChange('DateNaissance', e.target.value)}
+                size="lg"
+                type="date"
+                placeholder="Date of Birth"
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+              {errors.DateNaissanceError && <p className="text-red-500 text-xs italic mt-1">{errors.DateNaissanceError}</p>}
+            </div>
+
             <div className='pt-3'>
               <Checkbox
                 value={user.Checkbox}
@@ -342,9 +336,9 @@ export function SignUp() {
                 containerProps={{ className: "-ml-2.5" }}
               />
             </div>
-            <Button type="submit" className="mt-6 bg-orange-400" fullWidth style={{ backgroundColor: '#3D92F1', color: '#ffffff' }}>
-              Register Now
-            </Button>
+            <Button type="submit" className="mt-6 bg-orange-400" fullWidth style={{ backgroundColor: '#3D92F1' }}>
+  Register Now
+</Button>
 
             <Typography variant="paragraph" className="text-center text-blue-gray-500 font-medium mt-4">
               Already have an account?
