@@ -29,6 +29,19 @@ const ServiceDetails = ({ loading }) => {
     }
   };
 
+  const formatDate = (date) => {
+    if (!date) {
+      return 'Invalid date'; // Vous pouvez retourner un message d'erreur approprié ou laisser vide
+    }
+  
+    try {
+      return format(new Date(date), 'dd MMM, yyyy');
+    } catch (error) {
+      console.error('Invalid date:', date);
+      return 'Invalid date';
+    }
+  };
+
   const [images, setImages] = useState([]);
   const [userDetailsMap, setUserDetailsMap] = useState({});
   const [serviceDetails, setServiceDetails] = useState(null);
@@ -61,7 +74,7 @@ const ServiceDetails = ({ loading }) => {
   const { addToCart, cartItems, getTotalPrice } = useCart();
   const { authData } = useAuth();
 
-  const formatDate = (date) => format(new Date(date), 'dd MMM, yyyy');
+  
   // const maskNom = (nom) => {
   //   return '*'.repeat(nom.length);
   // };
@@ -439,9 +452,9 @@ const ServiceDetails = ({ loading }) => {
             onClick={() => handleReviewImageClick(reviewIndex, 0)}
           >
             <img
-              src={`https://backendbillcom-production.up.railway.app/uploads/${currentImage}`}
-              alt={serviceDetails.title}
-              className="rounded-lg w-full"
+              src={`https://backendbillcom-production.up.railway.app/uploads/${review.imgreview1}`}
+            alt="Review image 2"
+              className="review-img"
             />
           </div>
         )}
@@ -499,7 +512,6 @@ const ServiceDetails = ({ loading }) => {
   
     // Vérifier si l'utilisateur est connecté
     if (!authData || !authData.user || !authData.user.id) {
-      console.error("User ID is not available. Please check if the user is logged in.");
       Swal.fire({
         icon: 'error',
         title: 'You must be logged in to submit a review.',
@@ -507,11 +519,9 @@ const ServiceDetails = ({ loading }) => {
       return;
     }
   
-    // Continuer avec la logique si l'utilisateur est connecté
     const userId = authData.user.id;
     const productId = serviceDetails.id;
   
-    // Créer un objet FormData et y ajouter les champs texte
     const formData = new FormData();
     formData.append("name", review.name);
     formData.append("comment", review.comment);
@@ -521,23 +531,11 @@ const ServiceDetails = ({ loading }) => {
     formData.append("user", userId);
     formData.append("product", id);
   
-    // Ajouter les images dans le FormData
     if (images.length > 0) {
       images.forEach((image, index) => {
         formData.append(`imgreview${index + 1}`, image);
       });
     }
-  
-    console.log("FormData to be submitted:", {
-      name: review.name,
-      comment: review.comment,
-      priceRating: review.priceRating,
-      valueRating: review.valueRating,
-      qualityRating: review.qualityRating,
-      user: { idUser: userId },
-      product: productId,
-      images: images.map((img, idx) => `imgreview${idx + 1}: ${img.name}`),
-    });
   
     try {
       const response = await axios.post(
@@ -550,12 +548,30 @@ const ServiceDetails = ({ loading }) => {
         }
       );
   
-      console.log("Review submitted successfully:", response.data);
-      setReviews([...reviews, response.data]);
+      // Ajouter dynamiquement la nouvelle revue à la liste
+      setReviews(prevReviews => [...prevReviews, response.data]);
+  
+      // Rediriger vers l'onglet des avis
+      setSelectedSubTab('listReviews');
+  
+      Swal.fire({
+        icon: 'success',
+        title: 'Your review has been submitted!',
+      }).then(() => {
+        // Refresh the page after the user clicks OK in the alert
+        window.location.reload();
+      });
+  
     } catch (error) {
       console.error("Error submitting review:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'There was an error submitting your review.',
+      });
     }
   };
+  
+  
   
   
   // Fonction pour gérer la sélection des images
@@ -1323,7 +1339,7 @@ const ServiceDetails = ({ loading }) => {
       <ReviewImageModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        imageUrl={`http://localhost:8083/tp/uploads/${getReviewImageUrl()}`}
+        imageUrl={`https://backendbillcom-production.up.railway.app/uploads/${getReviewImageUrl()}`}
         onNext={() => setSelectedImageIndex((selectedImageIndex + 1) % 2)}
         onPrev={() => setSelectedImageIndex((selectedImageIndex - 1 + 2) % 2)}
         reviews={reviews}

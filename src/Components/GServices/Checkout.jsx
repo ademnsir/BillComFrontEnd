@@ -9,6 +9,10 @@ import Modal from 'react-modal';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import Loading from "@/Components/GServices/Loading";
+import { useAuth } from "@/pages/authContext";
+
+// Configure Modal for accessibility
+Modal.setAppElement('#root');
 
 // Modal styles
 const customStyles = {
@@ -40,123 +44,173 @@ const Checkout = () => {
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(false); // State for loading effect
+  const { authData } = useAuth();  // Get user data from AuthContext
 
   const MySwal = withReactContent(Swal);
 
-  // Fetch user data when the component mounts
+  // Fonction pour initialiser formData
+  const initializeFormData = (user) => {
+    setFormData({
+      firstName: user?.prenom ?? '',
+      lastName: user?.nom ?? '',
+      address: user?.adresse ?? '',
+      postalCode: user?.codePostal ?? '',
+      country: user?.pays ?? '',
+      phone: user?.telephone ?? '',
+      email: user?.email ?? ''
+    });
+    console.log("FormData initialisé :", {
+      firstName: user?.prenom ?? '',
+      lastName: user?.nom ?? '',
+      address: user?.adresse ?? '',
+      postalCode: user?.codePostal ?? '',
+      country: user?.pays ?? '',
+      phone: user?.telephone ?? '',
+      email: user?.email ?? ''
+    });
+  };
+
+  // Fetch user data when the component mounts or authData changes
   useEffect(() => {
-    const fetchUserData = async () => {
+    if (authData && authData.user) {
+      // Utiliser authData du contexte
+      initializeFormData(authData.user);
+    } else {
+      // Fallback pour utiliser le local storage directement
       try {
-        // Retrieve the logged-in user information from local storage
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        const userId = storedUser.idUser; // Ensure this matches the actual user ID field
-
-        const response = await axios.get(`http://localhost:8083/tp/api/user/getUserById/${userId}`);
-        const user = response.data;
-
-        setFormData({
-          firstName: user.prenom,
-          lastName: user.nom,
-          address: user.adresse,
-          postalCode: user.codepostal,
-          country: user.ville,
-          phone: user.telephone,
-          email: user.email
-        });
+        const storedData = JSON.parse(localStorage.getItem('authData'));
+        console.log("Utilisateur récupéré depuis localStorage:", storedData);
+        if (storedData && storedData.user) {
+          initializeFormData(storedData.user);
+        }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
       }
-    };
-
-    fetchUserData();
-  }, []);
+    }
+  }, [authData]);
 
   const dynamicColor = '#28A6C4';
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value ?? ''
+    }));
   };
 
   const handlePayment = async () => {
     setLoading(true);
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    const userId = storedUser.idUser;
+    let storedUser = authData;
+    if (!storedUser || !storedUser.user || !storedUser.user.id) {
+      try {
+        const storedData = JSON.parse(localStorage.getItem('authData'));
+        if (storedData && storedData.user) {
+          storedUser = storedData;
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
+      }
+    }
+
+    if (!storedUser || !storedUser.user || !storedUser.user.id) {
+      console.error('Utilisateur non authentifié.');
+      setLoading(false);
+      // Rediriger ou afficher un message d'erreur approprié
+      MySwal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Utilisateur non authentifié. Veuillez vous connecter.',
+      });
+      navigate('/login'); // Assurez-vous que cette route existe
+      return;
+    }
+
+    const userId = storedUser.user.id;
 
     const userUpdate = {
-      idUser: userId,  // Ensure the user ID is included in the update
+      idUser: userId,  // Assurez-vous que l'ID utilisateur est inclus
       nom: formData.lastName,
       prenom: formData.firstName,
       email: formData.email,
       adresse: formData.address,
-      ville: formData.country,
+      pays: formData.country,
       telephone: formData.phone,
-      codepostal: formData.postalCode,
+      codePostal: formData.postalCode,
     };
 
     try {
       // Update user information
-      await axios.put('http://localhost:8083/tp/api/user/updateUser', userUpdate);
+      await axios.put('https://backendbillcom-production.up.railway.app/tp/api/user/updateUser', userUpdate);
 
       // Prepare order data
       const orderData = {
         totalPrice: getTotalPrice() + 4.700,
         user: userUpdate,
-        products: cartItems.map(item => ({ id: item.id })),
+        products: cartItems.map(item => ({
+          id: item.id,
+          name: item.title,
+          price: item.promo
+            ? (parseFloat(item.price) * (1 - Math.abs(item.promo) / 100)).toFixed(2)
+            : parseFloat(item.price).toFixed(2),
+          quantity: item.quantity,
+          description: item.description || "",
+          image: `https://backendbillcom-production.up.railway.app/uploads/${item.image}`,
+        })),
+        address: formData,
       };
 
       setOrderTotal(orderData.totalPrice);
       setOrderData(orderData);
 
+      // Online payment using Stripe
       if (paymentMethod === 'online') {
-        const response = await fetch("http://localhost:8083/tp/api/payment/create-checkout-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            items: cartItems.map((item) => ({
-              name: item.title,
-              price: item.promo
-                ? (parseFloat(item.price) * (1 - Math.abs(item.promo) / 100)).toFixed(2)
-                : parseFloat(item.price).toFixed(2),
-              quantity: item.quantity,
-              description: item.description || "",
-              image: `https://backendbillcom-production.up.railway.app/uploads/${item.image}`
-            })),
-            address: formData
-          }),
-        });
-
-        const session = await response.json();
+        const response = await axios.post("https://backendbillcom-production.up.railway.app/tp/api/payment/create-checkout-session", orderData);
+        const session = response.data;
 
         if (session.error) {
           console.error("Payment failed: " + session.error);
           setLoading(false);
+          MySwal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Le paiement a échoué. Veuillez réessayer.',
+          });
           return;
         }
 
-        sessionStorage.setItem('paymentSuccess', 'true');
-
         const stripe = await loadStripe("pk_test_51OErmACis87pjNWpmR1mA9OY8bC9joB8m3yMTqOlDqonuPHoOla3qdFxRI4l23Rqpn4RjSQjj1H75UgBbpTr2Os800jsLoQ4TE");
-        stripe.redirectToCheckout({ sessionId: session.id }).then(() => {
-          navigate('/paymentSucces');
-          setLoading(false);
-        });
+        await stripe.redirectToCheckout({ sessionId: session.id });
+        setLoading(false);
+        navigate('/paymentSucces');
       } else {
+        // Handle cash on delivery case
         setModalIsOpen(true);
         setLoading(false);
       }
-
     } catch (error) {
       console.error('Error processing order:', error);
       setLoading(false);
+      MySwal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Une erreur est survenue lors du traitement de votre commande.',
+      });
     }
   };
 
   const confirmOrder = async () => {
     setLoading(true);
     try {
-      const orderResponse = await axios.post('http://localhost:8083/tp/api/commandes/addCommande', orderData);
+      const orderData = {
+        totalPrice: getTotalPrice() + 4.700,
+        user: formData,  // user data from form
+        products: cartItems.map(item => item.id),
+        address: formData.address,
+        paymentMethod: paymentMethod
+      };
+
+      const orderResponse = await axios.post('https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder', orderData);
 
       if (orderResponse.status === 201) {
         sessionStorage.setItem('commandeSuccess', 'true');
@@ -167,9 +221,6 @@ const Checkout = () => {
           title: 'Order placed successfully!',
           showConfirmButton: false,
           timer: 3000,
-          customClass: {
-            popup: 'swal2-min-height' // Custom class for the minimal height
-          }
         }).then(() => {
           navigate('/commandeSucces');
           setLoading(false);
@@ -177,11 +228,16 @@ const Checkout = () => {
       } else {
         console.error('Error creating order.');
         setLoading(false);
+        MySwal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Une erreur est survenue lors de la création de votre commande.',
+        });
       }
     } catch (error) {
       console.error('Error confirming order:', error);
-      navigate('/errorpage'); // Navigate to error page if there's an error
       setLoading(false);
+      navigate('/errorpage');
     }
   };
 
@@ -242,13 +298,62 @@ const Checkout = () => {
               <p>The selected address will be used as both your billing and shipping address.</p>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" className="border rounded p-2" />
-              <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" className="border rounded p-2" />
-              <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Address" className="border rounded p-2" />
-              <input type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} placeholder="Postal Code" className="border rounded p-2" />
-              <input type="text" name="country" value={formData.country} onChange={handleChange} placeholder="Country" className="border rounded p-2" />
-              <input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" className="border rounded p-2" />
-              <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="border rounded p-2" />
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First Name"
+                className="border rounded p-2"
+              />
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Last Name"
+                className="border rounded p-2"
+              />
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Address"
+                className="border rounded p-2"
+              />
+              <input
+                type="text"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleChange}
+                placeholder="Postal Code"
+                className="border rounded p-2"
+              />
+              <input
+                type="text"
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                placeholder="Country"
+                className="border rounded p-2"
+              />
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Phone"
+                className="border rounded p-2"
+              />
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email"
+                className="border rounded p-2"
+              />
             </div>
             <div className="mt-6">
               <Typography variant="h6" className="font-bold mb-2">Payment Method</Typography>

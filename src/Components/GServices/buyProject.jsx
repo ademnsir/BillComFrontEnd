@@ -311,13 +311,13 @@ const BuyProject = () => {
       <div className="flex justify-center mt-8">
         {authData.user && (
           <div className="custom-button relative mb--1">
-            <button
+            {/* <button
               onClick={openForm}
               className="bg-[#3D92F1] hover:bg-[#3D92F1] text-white font-bold py-2 px-4 rounded transition-colors duration-300"
               style={{ backgroundColor: dynamicColor }}
             >
               Add Your Product
-            </button>
+            </button> */}
           </div>
         )}
       </div>
