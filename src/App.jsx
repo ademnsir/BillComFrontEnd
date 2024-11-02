@@ -12,6 +12,7 @@ import Loading from "@/Components/GServices/Loading";
 import { LanguageProvider } from '@/pages/LanguageContext';
 import Alan from "./Components/Authentification/Alan";
 import Breadcrumbs from "@/Components/GServices/Breadcrumbs"; // Correct path
+import { UserProvider } from "@/pages/UserContext";// Import du UserProvider
 
 function App() {
   const { i18n } = useTranslation();
@@ -37,7 +38,7 @@ function App() {
 
   useEffect(() => {
     const handleRouteChange = () => {
-      if (location.pathname !== '/cart' && location.pathname !== '/payment-success' && location.pathname !== '/commande-success' ) {
+      if (location.pathname !== '/cart' && location.pathname !== '/payment-success' && location.pathname !== '/commande-success') {
         localStorage.setItem('previousRoute', JSON.stringify({
           pathname: location.pathname,
           search: location.search,
@@ -68,35 +69,34 @@ function App() {
   };
 
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <CartProvider>
-          {!isDashboard && <Navbar routes={routes} setIsLoggedIn={setIsLoggedIn} changeLanguage={changeLanguage} />} 
-          {!isHomePage && !isDetailsPage && !isProfilePage && !isCartPage && !ischeckoutPage &&  !isSignupPage &&   !isSigninPage &&  <Breadcrumbs />}
-          <Routes>
-            <Route path="/" element={<Home isLoggedIn={isLoggedIn} handleAction={handleAction} />} /> 
-            {/* Add other routes here */}
-          </Routes>
-          <Outlet />
+    <UserProvider> {/* Enveloppe l'application pour partager l'image de l'utilisateur globalement */}
+      <LanguageProvider>
+        <AuthProvider>
+          <CartProvider>
+            {!isDashboard && <Navbar routes={routes} setIsLoggedIn={setIsLoggedIn} changeLanguage={changeLanguage} />} 
+            {!isHomePage && !isDetailsPage && !isProfilePage && !isCartPage && !ischeckoutPage && !isSignupPage && !isSigninPage && <Breadcrumbs />}
+            <Routes>
+              <Route path="/" element={<Home isLoggedIn={isLoggedIn} handleAction={handleAction} />} /> 
+              {/* Add other routes here */}
+            </Routes>
+            <Outlet />
 
-          <Alan />
-          {!isMeeting && (
-            <div className="fixed bottom-5 right-5">
-              {/* Add any fixed components here */}
-            </div>
-          )}
-          {!isMeeting && (
-            <div className="fixed bottom-5 left-5">
-              {/* Add any fixed components here */}
-            </div>
-          )}
-        
-        </CartProvider>
-      </AuthProvider>
-      <Loading isVisible={isLoading} />
-    </LanguageProvider>
-
-
+            <Alan />
+            {!isMeeting && (
+              <div className="fixed bottom-5 right-5">
+                {/* Add any fixed components here */}
+              </div>
+            )}
+            {!isMeeting && (
+              <div className="fixed bottom-5 left-5">
+                {/* Add any fixed components here */}
+              </div>
+            )}
+          </CartProvider>
+        </AuthProvider>
+        <Loading isVisible={isLoading} />
+      </LanguageProvider>
+    </UserProvider>
   );
 }
 

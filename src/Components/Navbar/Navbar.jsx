@@ -1,6 +1,6 @@
 import logofemale from '/img/logoprof2.png';
 // src/Components/Navbar/Navbar.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef ,useContext } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { HiOutlineChatAlt } from 'react-icons/hi';
 import { FiShoppingBag ,FiShoppingCart } from 'react-icons/fi';
@@ -14,9 +14,14 @@ import Loading from "@/Components/GServices/Loading";
 import { useTranslation } from 'react-i18next';
 import "@/widgets/assets/Shop.css";
 import { useLanguage } from "@/pages/LanguageContext";
+import { UserContext  } from "@/pages/UserContext";
+
+
 
 function Navbar({ routes, setIsLoggedIn }) {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const { userImage, setUserImage } = useContext(UserContext);
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSignInDropdown, setShowSignInDropdown] = useState(false);
   const [showCartDropdown, setShowCartDropdown] = useState(false);
@@ -24,7 +29,7 @@ function Navbar({ routes, setIsLoggedIn }) {
   const [showScrollTopButton, setShowScrollTopButton] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [userImage, setUserImage] = useState(null);
+  
   const [userConecte, setUserConecte] = useState(null);
   const [userlogin, setUserLogin] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -38,30 +43,55 @@ function Navbar({ routes, setIsLoggedIn }) {
     changeLanguage(selectedLanguage);
   };
 
+
+  //image  de  user
   useEffect(() => {
     const userConecteStr = localStorage.getItem('authData');
     if (userConecteStr) {
-      const parsedUser = JSON.parse(userConecteStr);
-      setUserConecte(parsedUser);
-      setUserImage(`http://localhost:8083/tp/uploads/${parsedUser.profilePicture}`);
-      setIsLoggedIn(true);
+        const parsedUser = JSON.parse(userConecteStr);
+        console.log("Parsed User from localStorage:", parsedUser);
+
+        // Si `parsedUser` a une propriété `user`, utilisez-la comme l'utilisateur connecté
+        const user = parsedUser.user ? parsedUser.user : parsedUser;
+        console.log("User après extraction:", user);
+
+        setUserConecte(user);
+
+        // Check where profilePicture exists
+        const profilePicture = user.profilePicture;
+        console.log("Selected Profile Picture:", profilePicture);
+
+        // Update user image logic with appropriate path checking
+        const imageUrl = profilePicture
+            ? `https://backendbillcom-production.up.railway.app/uploads/${profilePicture}`
+            : '/img/unknown.jpg'; // Replace with the correct fallback path
+
+        console.log("User Image URL:", imageUrl);
+        setUserImage(imageUrl);
+
+        setIsLoggedIn(true);
     } else {
-      setUserConecte(null);
-      setUserImage(null);
-      setIsLoggedIn(false);
+        setUserConecte(null);
+        setUserImage('/img/unknown.jpg'); 
+        setIsLoggedIn(false);
     }
 
     const handleScroll = () => {
-      if (window.scrollY > 200) {
-        setShowScrollTopButton(true);
-      } else {
-        setShowScrollTopButton(false);
-      }
+        if (window.scrollY > 200) {
+            setShowScrollTopButton(true);
+        } else {
+            setShowScrollTopButton(false);
+        }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setIsLoggedIn]);
+}, [setIsLoggedIn]);
+
+
+
+  
+  
 
   useEffect(() => {
     let interval;
@@ -151,7 +181,7 @@ function Navbar({ routes, setIsLoggedIn }) {
             
             // Gérer l'image de profil si disponible
             if (user.profilePicture) {
-                setUserImage(`http://localhost:8083/tp/uploads/${user.profilePicture}`);
+                setUserImage(`https://backendbillcom-production.up.railway.app/uploads/${user.profilePicture}`);
             }
 
             setShowSignInDropdown(false);
@@ -302,31 +332,39 @@ function Navbar({ routes, setIsLoggedIn }) {
         </div>
         <div className="hidden gap-2 lg:flex items-center pr-8">
           <div className="relative flex items-center">
-            {userConecte ? (
-              <div className="relative flex items-center" onClick={toggleProfileDropdown}>
-                <img src={userImage} alt="User Image" className="user-image w-10 h-10 rounded-full cursor-pointer" />
-                {showProfileDropdown && (
-                  <div className="profile-dropdown absolute bg-blue-gray-50 border border-gray-200 rounded-lg shadow-md p-2 pb top-11 w-[190px]" style={{ left: '-140px' }}>
-                    <ul className="text-black w-full">
-                      <li className="flex items-center relative pt-2 pb-2">
-                        <img src={userImage} alt="Logo" className="h-8 w-8 mr-3 rounded-full" />
-                        <span>{userConecte.nom} {userConecte.prenom}</span>
-                      </li>
-                      <span className="absolute left-0 w-full h-[1px] bg-black my-1"></span>
-                      <li className="flex items-center justify-center pt-3" onClick={() => handleNavigation(`/profile/${userConecte.idUser}`)}>
-                        <Button className="profile-dropdown-item" style={{ color: '#3D92F1' }}>{t('PROFILE')}</Button>
-                      </li>
-                      <li className="flex items-center justify-center">
-                        <Button className="profile-dropdown-item" style={{ color: '#3D92F1' }}>{t('SETTINGS')}</Button>
-                      </li>
-                      <li className="flex items-center justify-center" onClick={logout}>
-                        <Button className="profile-dropdown-item" style={{ color: '#3D92F1' }}>{t('LOGOUT')}</Button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
+          {userConecte ? (
+  <div className="relative flex items-center" onClick={toggleProfileDropdown}>
+    <img src={userImage} alt="User Image" className="user-image w-10 h-10 rounded-full cursor-pointer" />
+{showProfileDropdown && (
+  <div className="profile-dropdown absolute bg-blue-gray-50 border border-gray-200 rounded-lg shadow-md p-2 pb top-11 w-[190px]" style={{ left: '-140px' }}>
+    <ul className="text-black w-full">
+      <li className="flex items-center relative pt-2 pb-2">
+        <img src={userImage} alt="User Image" className="h-8 w-8 mr-3 rounded-full" />
+        <span>{userConecte.nom} {userConecte.prenom}</span>
+      </li>
+      <span className="absolute left-0 w-full h-[1px] bg-black my-1"></span>
+     <li className="flex items-center justify-center pt-3" onClick={() => {
+    if (userConecte && userConecte._id) {
+        console.log("Navigating to profile with ID:", userConecte._id);
+        handleNavigation(`/profile/${userConecte._id}`);
+    } else {
+        console.error("L'ID utilisateur est manquant");
+    }
+}}>
+    <Button className="profile-dropdown-item" style={{ color: '#3D92F1' }}>{t('PROFILE')}</Button>
+</li>
+
+      <li className="flex items-center justify-center">
+        <Button className="profile-dropdown-item" style={{ color: '#3D92F1' }}>{t('SETTINGS')}</Button>
+      </li>
+      <li className="flex items-center justify-center" onClick={logout}>
+        <Button className="profile-dropdown-item" style={{ color: '#3D92F1' }}>{t('LOGOUT')}</Button>
+      </li>
+    </ul>
+  </div>
+)}
+  </div>
+) : (
               <>
                 <div className="flex items-center cursor-pointer" onClick={toggleSignInDropdown}>
                   <FaRegUser className="w-5 h-5" style={{ color: 'white' }} />
