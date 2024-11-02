@@ -224,6 +224,11 @@ const ServiceDetails = ({ loading }) => {
     }
   }, [authData]);
   
+  useEffect(() => {
+   
+    console.log("Reviews loaded:", reviews);
+  }, [reviews]);
+  
   
   useEffect(() => {
     // Fetch product details using the `id` param
@@ -248,6 +253,7 @@ const ServiceDetails = ({ loading }) => {
     async function fetchReviews() {
       try {
         const response = await axios.get(`https://backendbillcom-production.up.railway.app/tp/api/reviews/getbyid/${id}`);
+           console.log("Reviews fetched:", response.data);
         const reviewsData = response.data;
         setReviews(reviewsData);
     
@@ -509,7 +515,7 @@ const ServiceDetails = ({ loading }) => {
     e.preventDefault();
   
     // Vérifier si l'utilisateur est connecté
-    if (!authData || !authData.user || !authData.user.id) {
+    if (!authData || !authData.user || !authData.user._id) { // Utilisation de _id au lieu de id
       Swal.fire({
         icon: 'error',
         title: 'You must be logged in to submit a review.',
@@ -517,8 +523,8 @@ const ServiceDetails = ({ loading }) => {
       return;
     }
   
-    const userId = authData.user.id;
-    const productId = serviceDetails.id;
+    const userId = authData.user._id; // Utilisation de _id
+    const productId = serviceDetails.id; // Assurez-vous que serviceDetails.id est bien défini
   
     const formData = new FormData();
     formData.append("name", review.name);
@@ -527,7 +533,7 @@ const ServiceDetails = ({ loading }) => {
     formData.append("valueRating", review.valueRating);
     formData.append("qualityRating", review.qualityRating);
     formData.append("user", userId);
-    formData.append("product", id);
+    formData.append("product", id); // Correction de l'utilisation de l'ID du produit
   
     if (images.length > 0) {
       images.forEach((image, index) => {
@@ -562,6 +568,10 @@ const ServiceDetails = ({ loading }) => {
   
     } catch (error) {
       console.error("Error submitting review:", error);
+      if (error.response) {
+        console.error("Error details:", error.response.data); // Log pour les détails de l'erreur
+      }
+  
       Swal.fire({
         icon: 'error',
         title: 'There was an error submitting your review.',
@@ -569,16 +579,6 @@ const ServiceDetails = ({ loading }) => {
     }
   };
   
-  
-  
-  
-  // Fonction pour gérer la sélection des images
-  const handleImageChange = (e) => {
-    const { name, files } = e.target;
-    if (files.length > 0) {
-      setReview({ ...review, [name]: files[0] });
-    }
-  };
   
   
   
@@ -1111,55 +1111,55 @@ const ServiceDetails = ({ loading }) => {
           )}
 
 
-          {selectedSubTab === 'listReviews' && (
-            <div id="reviews-section" className="reviews-list w-full" style={{ paddingLeft: '10px' }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {reviews.map((review, reviewIndex) => {
-                  return (
-                    <div key={reviewIndex} className="review-item mb-4 p-4 bg-white rounded-lg shadow-md flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center mb-2">
-                          {/* <img
-                            src={review.user && review.user.profilePicture
-                              ? `http://localhost:8083/tp/uploads/${review.user.profilePicture}`
-                              : "/img/user1.jpg"} // Fallback to a default image if no profile picture
-                            alt="User Avatar"
-                            className="h-8 w-8 mr-3 rounded-full"
-                          /> */}
-                          <div className="flex flex-col">
-                            <div className="flex items-center">
-                              {/* <Typography variant="h6" className="font-bold text-sm">
-                                {review.user
-                                  ? `${maskNom(review.user.nom)} ${review.user.prenom}`
-                                  : 'Anonymous'}
-                              </Typography> */}
-                              <Typography variant="body1" className="ml-3 text-xs text-gray-500">
-                                {formatDate(review.date)}
-                              </Typography>
-                            </div>
-                            <div className="flex items-center mb-2">
-                              <div className="flex">
-                                {Array.from({ length: 5 }, (_, i) => (
-                                  <span
-                                    key={i}
-                                    className={`star ${i < Math.ceil(review.qualityRating) ? 'filled' : ''}`}
-                                    style={{
-                                      background: i < review.qualityRating && i + 1 > review.qualityRating
-                                        ? 'linear-gradient(to right, #F9D6E4 50%, #E0E0E0 50%)'
-                                        : i < review.qualityRating
-                                          ? 'linear-gradient(to right, #F9D6E4, #3D92F1)'
-                                          : '#E0E0E0',
-                                      WebkitBackgroundClip: 'text',
-                                      WebkitTextFillColor: 'transparent'
-                                    }}
-                                  >
-                                    ★
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
+{selectedSubTab === 'listReviews' && (
+  <div id="reviews-section" className="reviews-list w-full" style={{ paddingLeft: '10px' }}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {reviews.map((review, reviewIndex) => {
+        return (
+          <div key={reviewIndex} className="review-item mb-4 p-4 bg-white rounded-lg shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex items-center mb-2">
+                <img
+                  src={review.user && review.user.profilePicture
+                    ? `https://backendbillcom-production.up.railway.app/uploads/${review.user.profilePicture}`
+                    : "/img/user1.jpg"} // Fallback to a default image if no profile picture
+                  alt="User Avatar"
+                  className="h-8 w-8 mr-3 rounded-full"
+                />
+                <div className="flex flex-col">
+                  <div className="flex items-center">
+                    <Typography variant="h6" className="font-bold text-sm">
+                      {review.user
+                        ? `${review.user.nom} ${review.user.prenom}`
+                        : 'Anonymous'}
+                    </Typography>
+                    <Typography variant="body1" className="ml-3 text-xs text-gray-500">
+                      {formatDate(review.date)}
+                    </Typography>
+                  </div>
+                  <div className="flex items-center mb-2">
+                    <div className="flex">
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <span
+                          key={i}
+                          className={`star ${i < Math.ceil(review.qualityRating) ? 'filled' : ''}`}
+                          style={{
+                            background: i < review.qualityRating && i + 1 > review.qualityRating
+                              ? 'linear-gradient(to right, #F9D6E4 50%, #E0E0E0 50%)'
+                              : i < review.qualityRating
+                                ? 'linear-gradient(to right, #F9D6E4, #3D92F1)'
+                                : '#E0E0E0',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                          }}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
-                            <style jsx>{`
+                  <style jsx>{`
                     .star {
                       font-size: 24px;
                       transition: color 0.2s ease-in-out;
@@ -1168,39 +1168,38 @@ const ServiceDetails = ({ loading }) => {
                       color: #FFD700; /* Gold color for filled stars */
                     }
                   `}</style>
-                          </div>
-                          <ReviewImages review={review} reviewIndex={reviewIndex} />
-                        </div>
-                        <Typography variant="body2" className="text-gray-700 mb-4">
-                          {review.comment}
-                        </Typography>
-                      </div>
-
-                      <div className="flex items-center space-x-2 mt-4">
-                        <button
-                          id={`like-button-${review.id}`}
-                          onClick={() => handleLike(review.id)}
-                          className={`like-dislike-button ${likeStatus[review.id] ? 'liked' : ''}`}
-                        >
-                          <FiThumbsUp className={`icon ${likeStatus[review.id] ? 'active' : ''}`} />
-                          <span className="like-count" style={{ color: likeStatus[review.id] ? '#cb045a' : '#3D92F1' }}>{review.likes}</span>
-                        </button>
-                        <button
-                          id={`dislike-button-${review.id}`}
-                          onClick={() => handleDislike(review.id)}
-                          className={`like-dislike-button ${dislikeStatus[review.id] ? 'disliked' : ''}`}
-                        >
-                          <FiThumbsDown className={`icon ${dislikeStatus[review.id] ? 'active' : ''}`} />
-                          <span className="dislike-count" style={{ color: dislikeStatus[review.id] ? '#cb045a' : '#3D92F1' }}>{review.dislikes}</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                </div>
+                <ReviewImages review={review} reviewIndex={reviewIndex} />
               </div>
+              <Typography variant="body2" className="text-gray-700 mb-4">
+                {review.comment}
+              </Typography>
             </div>
-          )}
 
+            <div className="flex items-center space-x-2 mt-4">
+              <button
+                id={`like-button-${review.id}`}
+                onClick={() => handleLike(review.id)}
+                className={`like-dislike-button ${likeStatus[review.id] ? 'liked' : ''}`}
+              >
+                <FiThumbsUp className={`icon ${likeStatus[review.id] ? 'active' : ''}`} />
+                <span className="like-count" style={{ color: likeStatus[review.id] ? '#cb045a' : '#3D92F1' }}>{review.likes}</span>
+              </button>
+              <button
+                id={`dislike-button-${review.id}`}
+                onClick={() => handleDislike(review.id)}
+                className={`like-dislike-button ${dislikeStatus[review.id] ? 'disliked' : ''}`}
+              >
+                <FiThumbsDown className={`icon ${dislikeStatus[review.id] ? 'active' : ''}`} />
+                <span className="dislike-count" style={{ color: dislikeStatus[review.id] ? '#cb045a' : '#3D92F1' }}>{review.dislikes}</span>
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
 
 
           <style>{`

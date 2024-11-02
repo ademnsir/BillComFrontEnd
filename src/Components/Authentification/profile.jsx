@@ -4,6 +4,7 @@ import { Avatar, Typography } from "@material-tailwind/react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPinIcon } from "@heroicons/react/24/solid";
 import { HiOutlineMail } from 'react-icons/hi';
+import { FiUpload } from 'react-icons/fi'; // Import upload icon
 import Swal from 'sweetalert2';
 import { UserContext } from "@/pages/UserContext";
 
@@ -20,6 +21,7 @@ export function Profile() {
       try {
         const response = await axios.get(`https://backendbillcom-production.up.railway.app/auth/getUserById/${idUser}`);
         setUserData(response.data);
+        setUserImage(response.data.profilePicture ? `https://backendbillcom-production.up.railway.app/uploads/${response.data.profilePicture}` : '/public/img/unknown.jpg');
       } catch (error) {
         console.error('Error fetching user data:', error);
         navigate("/errorpage");
@@ -27,11 +29,26 @@ export function Profile() {
     };
 
     fetchUserData();
-  }, [idUser, navigate]);
+  }, [idUser, navigate, setUserImage]);
 
   const handleFileChange = (event) => {
     if (event.target.files.length > 0) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      const fileURL = URL.createObjectURL(file);
+
+      // Check if the selected file is the same as the current profile picture
+      if (userData.profilePicture && fileURL === userImage) {
+        Swal.fire({
+          title: 'Info',
+          text: 'You have selected the same image. Please choose a different one.',
+          icon: 'info',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+        return;
+      }
+      setSelectedFile(file);
     }
   };
 
@@ -101,7 +118,7 @@ export function Profile() {
                 onChange={handleFileChange}
               />
               <Avatar
-                src={selectedFile ? URL.createObjectURL(selectedFile) : userData.profilePicture ? `https://backendbillcom-production.up.railway.app/uploads/${userData.profilePicture}` : '/public/img/unknown.jpg'}
+                src={selectedFile ? URL.createObjectURL(selectedFile) : userImage}
                 alt="Profile picture"
                 variant="circular"
                 className="cursor-pointer"
@@ -109,12 +126,39 @@ export function Profile() {
                 onClick={handleAvatarClick}
               />
               <p className="text-gray-500 font-light text-sm mt-2">Cliquez sur votre image pour la modifier</p>
-              <button 
-                onClick={handleFileUpload} 
-                className="mt-2 text-white py-1 px-4 rounded bg-blue-600 hover:bg-blue-700"
+              <button
+                onClick={handleFileUpload}
+                className="button-24 mt-2 flex items-center justify-center"
+                role="button"
               >
-                Upload
+                <FiUpload className="text-blue-500 mr-2" />
+                <span className="text">Upload</span>
               </button>
+              <style jsx>{`
+                .button-24 {
+                  background-color: transparent;
+                  background-image: linear-gradient(#fff, #f5f5fa);
+                  border: 0 solid #003dff;
+                  border-radius: 9999px;
+                  box-shadow: rgba(37, 44, 97, .15) 0 4px 11px 0, rgba(93, 100, 148, .2) 0 1px 3px 0;
+                  color: #484c7a;
+                  cursor: pointer;
+                  display: inline-flex;
+                  font-weight: 600;
+                  margin: 4px;
+                  padding: 16px 24px;
+                  text-align: center;
+                  transition: all .2s ease-out;
+                  line-height: 1.15;
+                }
+                .button-24:hover {
+                  box-shadow: rgba(37, 44, 97, .15) 0 8px 22px 0, rgba(93, 100, 148, .2) 0 4px 6px 0;
+                }
+                .button-24:disabled {
+                  cursor: not-allowed;
+                  opacity: .5;
+                }
+              `}</style>
             </div>
             <div className="floating"> 
               <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-4xl dark:text-white">

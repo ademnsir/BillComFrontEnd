@@ -188,7 +188,7 @@ function Navbar({ routes, setIsLoggedIn }) {
             setIsLoggedIn(true);
             setLoading(false);
             navigate('/');
-            window.location.reload();
+           
         } else {
             throw new Error('Login unsuccessful');
         }

@@ -11,8 +11,8 @@ import Profile from "@/Components/Authentification/profile";
 import Loading from "@/Components/GServices/Loading";
 import { LanguageProvider } from '@/pages/LanguageContext';
 import Alan from "./Components/Authentification/Alan";
-import Breadcrumbs from "@/Components/GServices/Breadcrumbs"; // Correct path
-import { UserProvider } from "@/pages/UserContext";// Import du UserProvider
+import Breadcrumbs from "@/Components/GServices/Breadcrumbs"; 
+import { UserProvider } from "@/pages/UserContext";
 
 function App() {
   const { i18n } = useTranslation();

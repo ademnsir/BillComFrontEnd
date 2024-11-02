@@ -103,128 +103,133 @@ const Checkout = () => {
   const handleStripePayment = async () => {
     setLoading(true);
     let storedUser = authData;
-    if (!storedUser || !storedUser.user || !storedUser.user.id) {
-      try {
-        const storedData = JSON.parse(localStorage.getItem('authData'));
-        if (storedData && storedData.user) {
-          storedUser = storedData;
+    if (!storedUser || !storedUser.user || !storedUser.user._id) {
+        try {
+            const storedData = JSON.parse(localStorage.getItem('authData'));
+            if (storedData && storedData.user) {
+                storedUser = storedData;
+            }
+        } catch (error) {
+            console.error('Error parsing stored auth data:', error);
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des données utilisateur depuis le local storage :', error);
-      }
     }
 
-    if (!storedUser || !storedUser.user || !storedUser.user.id) {
-      console.error('Utilisateur non authentifié.');
-      setLoading(false);
-      MySwal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Utilisateur non authentifié. Veuillez vous connecter.',
-      });
-      navigate('/login');
-      return;
-    }
-
-    const userId = storedUser.user.id;
-
-    try {
-      const items = cartItems.map((item) => ({
-        name: item.title,
-        description: item.description || 'No description',
-        image: item.image,
-        price: parseFloat(item.price),
-        quantity: item.quantity,
-      }));
-
-      const orderData = {
-        items,
-        address: formData.address,
-      };
-
-      const response = await axios.post("https://backendbillcom-production.up.railway.app/tp/api/payment/create-checkout-session", orderData);
-      const session = response.data;
-
-      if (session.error) {
-        console.error("Payment failed: " + session.error);
+    if (!storedUser || !storedUser.user || !storedUser.user._id) {
         setLoading(false);
         MySwal.fire({
-          icon: 'error',
-          title: 'Erreur',
-          text: 'Le paiement a échoué. Veuillez réessayer.',
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Utilisateur non authentifié. Veuillez vous connecter.',
         });
+        navigate('/login');
         return;
-      }
-
-      const stripe = await loadStripe("pk_test_51OErmACis87pjNWpmR1mA9OY8bC9joB8m3yMTqOlDqonuPHoOla3qdFxRI4l23Rqpn4RjSQjj1H75UgBbpTr2Os800jsLoQ4TE");
-      await stripe.redirectToCheckout({ sessionId: session.id });
-      setLoading(false);
-    } catch (error) {
-      console.error('Error processing order:', error);
-      setLoading(false);
-      MySwal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Une erreur est survenue lors du traitement de votre commande.',
-      });
     }
-  };
+
+    try {
+        const items = cartItems.map(item => ({
+            name: item.title,
+            description: item.description || 'No description',
+            image: item.image,
+            price: parseFloat(item.price),
+            quantity: item.quantity,
+        }));
+
+        const orderData = { items, address: formData.address };
+
+        const response = await axios.post("https://backendbillcom-production.up.railway.app/tp/api/payment/create-checkout-session", orderData);
+        const session = response.data;
+
+        if (session.error) {
+            throw new Error(session.error);
+        }
+
+        const stripe = await loadStripe("pk_test_51OErmACis87pjNWpmR1mA9OY8bC9joB8m3yMTqOlDqonuPHoOla3qdFxRI4l23Rqpn4RjSQjj1H75UgBbpTr2Os800jsLoQ4TE");
+        const result = await stripe.redirectToCheckout({ sessionId: session.id });
+
+        if (result.error) {
+            throw result.error;
+        }
+    } catch (error) {
+        console.error('Error during Stripe payment process:', error);
+        MySwal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Une erreur est survenue lors du traitement de votre paiement. Veuillez réessayer.',
+        });
+        setLoading(false);
+    }
+};
 
   const confirmOrder = async () => {
     setLoading(true);
     try {
-      const userId = authData?.user?.id || formData.userId;
-      const products = cartItems.map(item => item.id || item._id);
+        // Retrieve user ID from authData or formData
+        const userId = authData?.user?._id || formData.userId; // Ensure you're using the correct key for the user ID
 
-      if (products.includes(undefined)) {
-      }
+        if (!userId) {
+            console.error('User ID is missing.');
+            setLoading(false);
+            await MySwal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: 'Utilisateur non authentifié ou informations utilisateur manquantes.',
+            });
+            navigate('/login');
+            return;
+        }
 
-      const orderData = {
-        totalPrice: getTotalPrice() + 4.700,
-        user: userId,
-        products,
-        address: formData.address,
-        paymentMethod: paymentMethod,
-      };
+        const products = cartItems.map(item => item.id || item._id);
+        if (products.includes(undefined)) {
+            console.warn('Some products have undefined IDs.');
+        }
 
-      const orderResponse = await axios.post(
-        'https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder',
-        orderData
-      );
+        const orderData = {
+            totalPrice: getTotalPrice() + 4.700,
+            user: userId, // Ensure user ID is assigned
+            products,
+            address: formData.address,
+            paymentMethod: paymentMethod,
+        };
 
-      if (orderResponse.status === 201) {
-        sessionStorage.setItem('commandeSuccess', 'true');
-        setModalIsOpen(false);
+        const orderResponse = await axios.post(
+            'https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder',
+            orderData
+        );
 
-        await MySwal.fire({
-          position: 'bottom-right',
-          icon: 'success',
-          title: 'Order placed successfully!',
-          showConfirmButton: false,
-          timer: 3000,
-        });
+        if (orderResponse.status === 201) {
+            sessionStorage.setItem('commandeSuccess', 'true');
+            setModalIsOpen(false);
 
-        setLoading(false);
-        navigate('/store?type=all');
-      } else {
-        console.error('Erreur lors de la création de la commande. Statut:', orderResponse.status);
-        setLoading(false);
-        await MySwal.fire({
-          icon: 'error',
-          title: 'Erreur',
-          text: 'Une erreur est survenue lors de la création de votre commande.',
-        });
-      }
+            await MySwal.fire({
+                position: 'bottom-right',
+                icon: 'success',
+                title: 'Order placed successfully!',
+                showConfirmButton: false,
+                timer: 3000,
+            });
+
+            setLoading(false);
+            navigate('/store?type=all');
+        } else {
+            console.error('Error creating order. Status:', orderResponse.status);
+            setLoading(false);
+            await MySwal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: 'Une erreur est survenue lors de la création de votre commande.',
+            });
+        }
     } catch (error) {
-      console.error('Erreur lors de la confirmation de la commande:', error.response ? error.response.data : error.message);
-      setLoading(false);
-      await MySwal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Une erreur est survenue lors de la confirmation de votre commande.',
-      });
+        console.error('Error confirming order:', error.response ? error.response.data : error.message);
+        setLoading(false);
+        await MySwal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Une erreur est survenue lors de la confirmation de votre commande.',
+        });
     }
-  };
+};
+
 
   return (
     <div className="container mx-auto mt-40 p-4">
