@@ -563,7 +563,7 @@ const ServiceDetails = ({ loading }) => {
         title: 'Your review has been submitted!',
       }).then(() => {
         // Refresh the page after the user clicks OK in the alert
-        window.location.reload();
+      
       });
   
     } catch (error) {
@@ -1115,6 +1115,7 @@ const ServiceDetails = ({ loading }) => {
   <div id="reviews-section" className="reviews-list w-full" style={{ paddingLeft: '10px' }}>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {reviews.map((review, reviewIndex) => {
+          console.log("User data in review:", review.user);
         return (
           <div key={reviewIndex} className="review-item mb-4 p-4 bg-white rounded-lg shadow-md flex flex-col justify-between">
             <div>

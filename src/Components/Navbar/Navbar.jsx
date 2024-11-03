@@ -44,32 +44,30 @@ function Navbar({ routes, setIsLoggedIn }) {
   };
 
 
-  //image  de  user
   useEffect(() => {
+    // Récupération initiale de l'image de profil à partir de localStorage
+    const savedUserImage = localStorage.getItem('userImage');
+    if (savedUserImage) {
+        setUserImage(savedUserImage);
+    }
+
     const userConecteStr = localStorage.getItem('authData');
     if (userConecteStr) {
         const parsedUser = JSON.parse(userConecteStr);
-        console.log("Parsed User from localStorage:", parsedUser);
-
-        // Si `parsedUser` a une propriété `user`, utilisez-la comme l'utilisateur connecté
         const user = parsedUser.user ? parsedUser.user : parsedUser;
-        console.log("User après extraction:", user);
-
         setUserConecte(user);
 
-        // Check where profilePicture exists
+        // Vérification de l'image de profil
         const profilePicture = user.profilePicture;
-        console.log("Selected Profile Picture:", profilePicture);
-
-        // Update user image logic with appropriate path checking
         const imageUrl = profilePicture
             ? `https://backendbillcom-production.up.railway.app/uploads/${profilePicture}`
-            : '/img/unknown.jpg'; // Replace with the correct fallback path
+            : '/img/unknown.jpg'; // Image par défaut si absente
 
-        console.log("User Image URL:", imageUrl);
         setUserImage(imageUrl);
-
         setIsLoggedIn(true);
+
+        // Enregistrer l'image dans localStorage
+        localStorage.setItem('userImage', imageUrl);
     } else {
         setUserConecte(null);
         setUserImage('/img/unknown.jpg'); 
@@ -87,6 +85,14 @@ function Navbar({ routes, setIsLoggedIn }) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
 }, [setIsLoggedIn]);
+
+// Sauvegarder l'image de profil lorsqu'elle change
+useEffect(() => {
+    if (userImage) {
+        localStorage.setItem('userImage', userImage);
+    }
+}, [userImage]);
+
 
 
 
@@ -116,12 +122,14 @@ function Navbar({ routes, setIsLoggedIn }) {
   const logout = () => {
     setShowLogoutModal(false);
     localStorage.removeItem('authData');
+    localStorage.removeItem('userImage');
     setUserConecte(null);
     setUserImage(null);
     setIsLoggedIn(false);
     clearCart();
     navigate('/');
-  };
+};
+
 
   const cartDropdownRef = useRef(null);
 

@@ -160,75 +160,82 @@ const Checkout = () => {
     }
 };
 
-  const confirmOrder = async () => {
-    setLoading(true);
-    try {
-        // Retrieve user ID from authData or formData
-        const userId = authData?.user?._id || formData.userId; // Ensure you're using the correct key for the user ID
+const confirmOrder = async () => {
+  setLoading(true);
+  try {
+      // Retrieve user ID and details from authData or formData
+      const userId = authData?.user?._id || formData.userId;
+      const userDetails = {
+          nom: authData?.user?.nom || formData.lastName,
+          prenom: authData?.user?.prenom || formData.firstName,
+          telephone: authData?.user?.telephone || formData.telephone
+      };
 
-        if (!userId) {
-            console.error('User ID is missing.');
-            setLoading(false);
-            await MySwal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: 'Utilisateur non authentifié ou informations utilisateur manquantes.',
-            });
-            navigate('/login');
-            return;
-        }
+      if (!userId || !userDetails.nom || !userDetails.prenom || !userDetails.telephone) {
+          console.error('User details are missing.');
+          setLoading(false);
+          await MySwal.fire({
+              icon: 'error',
+              title: 'Erreur',
+              text: 'Informations utilisateur manquantes.',
+          });
+          navigate('/login');
+          return;
+      }
 
-        const products = cartItems.map(item => item.id || item._id);
-        if (products.includes(undefined)) {
-            console.warn('Some products have undefined IDs.');
-        }
+      const products = cartItems.map(item => item.id || item._id);
+      if (products.includes(undefined)) {
+          console.warn('Some products have undefined IDs.');
+      }
 
-        const orderData = {
-            totalPrice: getTotalPrice() + 4.700,
-            user: userId, // Ensure user ID is assigned
-            products,
-            address: formData.address,
-            paymentMethod: paymentMethod,
-        };
+      const orderData = {
+          totalPrice: getTotalPrice() + 4.700,
+          user: userId,
+          products,
+          address: formData.address,
+          paymentMethod: paymentMethod,
+          userDetails // Include user details in the request
+      };
 
-        const orderResponse = await axios.post(
-            'https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder',
-            orderData
-        );
+      const orderResponse = await axios.post(
+          'https://backendbillcom-production.up.railway.app/tp/api/orders/addOrder',
+          orderData
+      );
 
-        if (orderResponse.status === 201) {
-            sessionStorage.setItem('commandeSuccess', 'true');
-            setModalIsOpen(false);
+      if (orderResponse.status === 201) {
+          sessionStorage.setItem('commandeSuccess', 'true');
+          setModalIsOpen(false);
 
-            await MySwal.fire({
-                position: 'bottom-right',
-                icon: 'success',
-                title: 'Order placed successfully!',
-                showConfirmButton: false,
-                timer: 3000,
-            });
+          await MySwal.fire({
+              position: 'bottom-right',
+              icon: 'success',
+              title: 'Order placed successfully!',
+              showConfirmButton: false,
+              timer: 3000,
+          });
 
-            setLoading(false);
-            navigate('/store?type=all');
-        } else {
-            console.error('Error creating order. Status:', orderResponse.status);
-            setLoading(false);
-            await MySwal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: 'Une erreur est survenue lors de la création de votre commande.',
-            });
-        }
-    } catch (error) {
-        console.error('Error confirming order:', error.response ? error.response.data : error.message);
-        setLoading(false);
-        await MySwal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: 'Une erreur est survenue lors de la confirmation de votre commande.',
-        });
-    }
+          setLoading(false);
+          navigate('/store?type=all');
+      } else {
+          console.error('Error creating order. Status:', orderResponse.status);
+          setLoading(false);
+          await MySwal.fire({
+              icon: 'error',
+              title: 'Erreur',
+              text: 'Une erreur est survenue lors de la création de votre commande.',
+          });
+      }
+  } catch (error) {
+      console.error('Error confirming order:', error.response ? error.response.data : error.message);
+      setLoading(false);
+      await MySwal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Une erreur est survenue lors de la confirmation de votre commande.',
+      });
+  }
 };
+
 
 
   return (
@@ -445,7 +452,23 @@ const Checkout = () => {
         contentLabel="Order Confirmation"
       >
         <Typography variant="h5" className="font-bold">Order Confirmation</Typography>
+        
         <Typography className="my-4">You are ready to place an order with payment on delivery. Are you sure?</Typography>
+        <div className="my-4">
+                {cartItems.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center mb-4">
+                    <img src={`https://backendbillcom-production.up.railway.app/uploads/${item.image}`} alt={item.title} className="w-20 h-20 rounded" />
+                    <Typography className="flex-grow ml-4">{item.title}</Typography>
+                    <Typography>{item.quantity} x {parseFloat(item.price).toFixed(3)} DT</Typography>
+                 
+                  </div>
+                ))}
+              </div>
+              <hr></hr>
+              <br></br>
+        <Typography className="font-bold text-red-500">Total Price :{(getTotalPrice() + 4.700).toFixed(3)} DT</Typography>
+        <br></br>
+        
         <div className="flex justify-between">
           <Button
             onClick={() => {
