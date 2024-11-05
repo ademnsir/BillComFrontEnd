@@ -3,7 +3,7 @@ import { useCart } from '@/pages/CartContext';
 import { Typography, Button } from "@material-tailwind/react";
 import { FiTrash2, FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import Footer from "@/widgets/layout/Footer";
+import { Footer } from "@/widgets/layout/footer";
 import Loading from "@/Components/GServices/Loading";
 
 const Payment = () => {

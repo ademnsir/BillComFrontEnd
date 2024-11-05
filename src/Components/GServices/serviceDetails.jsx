@@ -5,7 +5,7 @@ import { useCart } from "@/pages/CartContext";
 import axios from "axios";
 import Swal from "sweetalert2";
 import "@/widgets/assets/ServiceDetails.css";
-import { Footer } from "@/widgets/layout/Footer";
+import { Footer } from "@/widgets/layout/footer";
 import Loading from "@/Components/GServices/Loading";
 import Breadcrumbs from "@/Components/GServices/Breadcrumbs";
 import { FiShoppingCart, FiShoppingBag, FiThumbsUp, FiThumbsDown, FiBook, FiFlag, FiUpload } from 'react-icons/fi';
