@@ -61,12 +61,11 @@ function Navbar({ routes, setIsLoggedIn }) {
         const profilePicture = user.profilePicture;
         const imageUrl = profilePicture
             ? `https://backendbillcom-production.up.railway.app/uploads/${profilePicture}`
-            : '/img/unknown.jpg'; // Image par défaut si absente
+            : '/img/unknown.jpg';
 
         setUserImage(imageUrl);
         setIsLoggedIn(true);
 
-        // Enregistrer l'image dans localStorage
         localStorage.setItem('userImage', imageUrl);
     } else {
         setUserConecte(null);
