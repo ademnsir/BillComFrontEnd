@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ServiceCard from "@/widgets/cards/service-card";
-import { Footer } from "@/widgets/layout/Footer";
+import { Footer } from "@/widgets/layout/footer";
 import { AddServiceForm } from "@/widgets/layout/AddServiceForm";
 import { useAuth } from "@/pages/authContext";
 import { FiFilter, FiList, FiGrid } from "react-icons/fi";
